@@ -8,7 +8,7 @@ import jakarta.persistence.OneToMany;
 import java.util.Set;
 
 public class Subscriber extends User {
-    private Role role;
+    private String role;
 
     @ManyToOne
     private Healthcare healthcare; // "healthcare" au lieu de "healthcares"
