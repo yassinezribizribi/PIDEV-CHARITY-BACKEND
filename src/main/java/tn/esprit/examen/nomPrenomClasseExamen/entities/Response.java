@@ -1,0 +1,31 @@
+package tn.esprit.examen.nomPrenomClasseExamen.entities;
+import jakarta.persistence.*;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
+
+import java.io.Serializable;
+import java.util.Date;
+import java.util.Set;
+
+@Getter
+@Setter
+@ToString
+@AllArgsConstructor
+@NoArgsConstructor
+@FieldDefaults(level= AccessLevel.PRIVATE)
+@Entity
+public class Response implements Serializable {
+    @Id
+    private Long idRespons;
+    private Long idSender;
+    private Long idReceiver;
+    private Date DateRespons ;
+    private String Content;
+    private String Object;
+
+    @ManyToMany(mappedBy="responses", cascade = CascadeType.ALL)
+    private Set<Request> requests;
+
+
+
+}
