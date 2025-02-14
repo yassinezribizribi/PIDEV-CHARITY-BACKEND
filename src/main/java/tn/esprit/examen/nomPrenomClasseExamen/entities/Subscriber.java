@@ -1,12 +1,17 @@
 package tn.esprit.examen.nomPrenomClasseExamen.entities;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.*;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.util.Set;
-
+@Getter
+@Setter
+@ToString
+@AllArgsConstructor
+@NoArgsConstructor
+@FieldDefaults(level= AccessLevel.PRIVATE)
+@Entity
 public class Subscriber extends User {
     private String role;
 

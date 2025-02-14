@@ -1,4 +1,7 @@
 package tn.esprit.examen.nomPrenomClasseExamen.services;
 
-public class AssociationServices {
+import lombok.AllArgsConstructor;
+
+@AllArgsConstructor
+public class AssociationServices implements IAssociationServices{
 }
