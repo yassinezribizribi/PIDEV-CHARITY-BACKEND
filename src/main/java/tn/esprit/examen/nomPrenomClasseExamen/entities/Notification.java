@@ -19,6 +19,8 @@ public class Notification implements Serializable {
     private Long idNotification;
     private String Message;
     private Date DateTime;
+    @ManyToOne
+    private Association association;
 
 
 
