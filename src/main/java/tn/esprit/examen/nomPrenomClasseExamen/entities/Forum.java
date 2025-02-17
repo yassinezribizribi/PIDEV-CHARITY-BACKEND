@@ -23,7 +23,7 @@ public class Forum implements Serializable {
     private Date dateCreation;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy="forum")
-    private Set<Request> Requests;
+    private Set<Request> requests;
 
     @ManyToMany(cascade = CascadeType.ALL)
     private Set<Subscriber> subscribers;

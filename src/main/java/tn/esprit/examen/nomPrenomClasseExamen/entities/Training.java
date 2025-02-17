@@ -16,14 +16,14 @@ import java.util.Set;
 @Entity
 public class Training implements Serializable {
     @Id
-    private Long IdTraining;
-    private String TraingName;
-    private String Description;
-    private Integer Duration;
-    private Integer Capacity;
+    private Long idTraining;
+    private String trainingName;
+    private String description;
+    private Integer duration;
+    private Integer capacity;
     private Level level;
     private Type type;
-    private Date SessionDate;
+    private Date sessionDate;
 
     @ManyToMany(cascade = CascadeType.ALL)
     private Set<Subscriber> subscribers;

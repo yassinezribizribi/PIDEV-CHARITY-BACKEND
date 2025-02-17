@@ -18,12 +18,12 @@ import java.util.Set;
 public class Mission implements Serializable{
     @Id
     private Long idMission;
-    private String Description;
-    private String Location;
+    private String description;
+    private String location;
     private Date startDate;
     private Date endDate;
-    private int VolunteerCount;
-    private MissionStatus Status;
+    private int volunteerCount;
+    private MissionStatus status;
 
     @ManyToMany(mappedBy="missions", cascade = CascadeType.ALL)
     private Set<Association> associations;

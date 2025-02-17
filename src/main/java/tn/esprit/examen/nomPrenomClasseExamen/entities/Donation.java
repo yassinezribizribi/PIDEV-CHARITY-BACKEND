@@ -17,11 +17,11 @@ import java.util.Set;
 public class Donation implements Serializable {
     @Id
     private Long idDonation;
-    private String Quantite ;
-    private Boolean Availability;
-    private Date LastUpdated;
+    private String quantite ;
+    private Boolean availability;
+    private Date lastUpdated;
     private DonationType donationType;
-    private Long NumCompte;//visitor
+    private Long numCompte;//visitor
 
     @OneToOne
     private Paiement paiement;

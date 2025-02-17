@@ -18,11 +18,11 @@ public class Crisis implements Serializable {
     @Id
     private Long idCrisis;
     private Categorie categorie;
-    private String Location;
-    private String Updates;
-    private String Description;
-    private Date CrisisDate;
+    private String location;
+    private String updates;
+    private String description;
+    private Date crisisDate;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy="crisis")
-    private Set<Mission> Missions;
+    private Set<Mission> missions;
 }

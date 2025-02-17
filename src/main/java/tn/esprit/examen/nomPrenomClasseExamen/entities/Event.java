@@ -17,20 +17,20 @@ import java.util.Set;
 public class Event implements Serializable {
     @Id
     private Long idEvent;
-    private String Title;
-    private String Description;
-    private Date DateTime;
-    private String Location;
+    private String title;
+    private String description;
+    private Date dateTime;
+    private String location;
     private TypeEvent typeEvent;
-    private Date ReservationDate;
+    private Date reservationDate;
 
     @ManyToOne
     Association association;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy="event")
-    private Set<Paiement> Paielents;
+    private Set<Paiement> paiements;
 
     @OneToMany(cascade = CascadeType.ALL)
-    private Set<Notification> Notifications;
+    private Set<Notification> notifications;
 
 }
