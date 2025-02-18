@@ -16,13 +16,20 @@ import java.util.Set;
 @Entity
 public class Crisis implements Serializable {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idCrisis;
     private Categorie categorie;
-    private String Location;
-    private String Updates;
-    private String Description;
-    private Date CrisisDate;
+    private String location;
+    private String updates;
+    private String description;
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date crisisDate;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy="crisis")
-    private Set<Mission> Missions;
+    private Set<Mission> missions;
+
+
+    @ManyToOne
+    @JoinColumn(name = "subscriber_id", nullable = false)
+    private Subscriber subscriber;  // L'utilisateur qui a signalé la crise
 }

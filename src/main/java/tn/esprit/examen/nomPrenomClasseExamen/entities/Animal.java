@@ -16,11 +16,11 @@ import java.io.Serializable;
 public class Animal implements Serializable {
     @Id
     private Long IdAnimal;
-    private String Name;
-    private String AnimalSpecies;
-    private String Race ;
-    private String MedicalHistory;
-    private Boolean IsAdopted;
+    private String name;
+    private String animalSpecies;
+    private String race ;
+    private String medicalHistory;
+    private Boolean isAdopted;
 
     @OneToOne
     private Healthcare healthcare;

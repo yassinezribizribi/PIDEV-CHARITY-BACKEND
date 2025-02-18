@@ -26,7 +26,7 @@ public class JobOffer implements Serializable {
     private Boolean isActive;
 
     @OneToMany(cascade = CascadeType.ALL)
-    private Set<Forum> Forums;
+    private Set<Forum> forums;
 
 
 }

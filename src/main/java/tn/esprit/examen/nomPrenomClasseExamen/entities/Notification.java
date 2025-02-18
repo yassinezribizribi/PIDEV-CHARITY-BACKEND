@@ -17,8 +17,8 @@ import java.util.Date;
 public class Notification implements Serializable {
     @Id
     private Long idNotification;
-    private String Message;
-    private Date DateTime;
+    private String message;
+    private Date dateTime;
     @ManyToOne
     private Association association;
 

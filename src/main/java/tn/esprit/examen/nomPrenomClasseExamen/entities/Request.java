@@ -20,9 +20,9 @@ public class Request implements Serializable {
     private Long idRequest;
     private Long idSender;
     private Long idReceiver;
-    private Date DateRequest;
-    private String Object;
-    private String Content;
+    private Date dateRequest;
+    private String object;
+    private String content;
     private Boolean isUrgent;
 
     @ManyToMany(cascade = CascadeType.ALL)

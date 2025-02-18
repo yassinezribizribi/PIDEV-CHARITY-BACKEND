@@ -17,8 +17,8 @@ import java.util.Set;
 @Entity
 public class Subscription implements Serializable {
     @Id
-    private Long IdSubscription;
-    private Date SubscriptionDate;
+    private Long idSubscription;
+    private Date subscriptionDate;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy="subscription")
     private Set<Posts> Postss;
