@@ -7,31 +7,38 @@ import lombok.experimental.FieldDefaults;
 import java.util.Set;
 @Getter
 @Setter
-@ToString
 @AllArgsConstructor
 @NoArgsConstructor
 @FieldDefaults(level= AccessLevel.PRIVATE)
 @Entity
 public class Subscriber extends User {
-    private String role;
+
+    @Enumerated(EnumType.STRING)
+    private Role role;
+
+    @Column(nullable = true)
+    private String skills;
+    @Column(nullable = true)
+    private String nationality;
+    @Column(nullable = true)
+    private String expertiseArea;
+    @Column(nullable = true)
+    private String associationRole;
 
     @ManyToOne
-    private Healthcare healthcare; // "healthcare" au lieu de "healthcares"
-
+    private Healthcare healthcare;
 
     @OneToMany(cascade = CascadeType.ALL)
-    private Set<Animal> Animals;
-
-
+    private Set<Animal> animals;
 
     @ManyToMany(mappedBy="subscribers", cascade = CascadeType.ALL)
     private Set<Donation> donations;
 
     @ManyToMany(mappedBy="subscribers", cascade = CascadeType.ALL)
     private Set<Training> trainings;
-
-    @ManyToMany(mappedBy="subscribers", cascade = CascadeType.ALL)
+    @ManyToMany(mappedBy = "subscribers")
     private Set<Forum> forums;
+
 
 
 

@@ -16,12 +16,14 @@ import java.util.Set;
 @Entity
 public class Response implements Serializable {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)  // Permet l'auto-incrémentation
+
     private Long idRespons;
     private Long idSender;
     private Long idReceiver;
-    private Date DateRespons ;
-    private String Content;
-    private String Object;
+    private Date dateRespons ;
+    private String content;
+    private String object;
 
     @ManyToMany(mappedBy="responses", cascade = CascadeType.ALL)
     private Set<Request> requests;

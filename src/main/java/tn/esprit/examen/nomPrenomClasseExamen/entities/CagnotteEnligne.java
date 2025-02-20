@@ -16,11 +16,13 @@ import java.util.Set;
 public class CagnotteEnligne implements Serializable {
 
     @Id
-    private Long IdCagnotte;
-    private String Title;
-    private String Description;
-    private float GoalAmount;
-    private float CurrentAmount;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)  // Permet l'auto-incrémentation
+
+    private Long idCagnotte;
+    private String title;
+    private String description;
+    private float goalAmount;
+    private float currentAmount;
 
     @ManyToMany(mappedBy="cagnotteenlignes", cascade = CascadeType.ALL)
     private Set<Donation> donations;

@@ -15,12 +15,14 @@ import java.io.Serializable;
 @Entity
 public class Animal implements Serializable {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)  // Permet l'auto-incrémentation
+
     private Long IdAnimal;
-    private String Name;
-    private String AnimalSpecies;
-    private String Race ;
-    private String MedicalHistory;
-    private Boolean IsAdopted;
+    private String name;
+    private String animalSpecies;
+    private String race ;
+    private String medicalHistory;
+    private Boolean isAdopted;
 
     @OneToOne
     private Healthcare healthcare;

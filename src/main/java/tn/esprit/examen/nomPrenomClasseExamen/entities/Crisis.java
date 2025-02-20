@@ -16,13 +16,15 @@ import java.util.Set;
 @Entity
 public class Crisis implements Serializable {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)  // Permet l'auto-incrémentation
+
     private Long idCrisis;
     private Categorie categorie;
-    private String Location;
-    private String Updates;
-    private String Description;
-    private Date CrisisDate;
+    private String location;
+    private String updates;
+    private String description;
+    private Date crisisDate;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy="crisis")
-    private Set<Mission> Missions;
+    private Set<Mission> missions;
 }

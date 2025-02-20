@@ -1,12 +1,11 @@
 package tn.esprit.examen.nomPrenomClasseExamen.entities;
 
-import java.io.Serializable;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 
 @Getter
@@ -14,20 +13,29 @@ import java.util.Set;
 @ToString
 @AllArgsConstructor
 @NoArgsConstructor
-@FieldDefaults(level= AccessLevel.PRIVATE)
+@FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-
 public class Forum implements Serializable {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_forum")  // Spécifier le nom correct
     private Long idForum;
+
+
     private Date dateCreation;
 
-    @OneToMany(cascade = CascadeType.ALL, mappedBy="forum")
-    private Set<Request> Requests;
+    @OneToMany(mappedBy = "forum", cascade = CascadeType.ALL)
+    private Set<Request> requests;
 
-    @ManyToMany(cascade = CascadeType.ALL)
+    @ManyToMany
+    @JoinTable(
+            name = "forum_subscribers",
+            joinColumns = @JoinColumn(name = "id_forum"),
+            inverseJoinColumns = @JoinColumn(name = "subscriber_id")
+    )
     private Set<Subscriber> subscribers;
 
-    @ManyToMany(cascade = CascadeType.ALL)
-    private Set<JobApplication> jobapplications;
+    @OneToMany(mappedBy = "forum", cascade = CascadeType.ALL)
+    private List<JobOffer> jobOffers;
+
 }

@@ -16,9 +16,11 @@ import java.util.Date;
 @Entity
 public class Notification implements Serializable {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)  // Permet l'auto-incrémentation
+
     private Long idNotification;
-    private String Message;
-    private Date DateTime;
+    private String message;
+    private Date dateTime;
     @ManyToOne
     private Association association;
 
