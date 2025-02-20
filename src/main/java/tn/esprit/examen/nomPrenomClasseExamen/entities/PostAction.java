@@ -16,6 +16,8 @@ import java.util.Date;
 @Entity
 public class PostAction implements Serializable {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)  // Permet l'auto-incrémentation
+
     private Long idAction;
     private TypeAction typeAction;
     private Date dateAction;

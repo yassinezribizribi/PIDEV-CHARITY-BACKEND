@@ -18,14 +18,16 @@ import java.util.Set;
 public class Posts implements Serializable{
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)  // Permet l'auto-incrémentation
+
     private Long idPosts;
-    private String Content;
-    private Date CreationDate;
-    private int LikesCount;
-    private int ShareCount;
+    private String content;
+    private Date creationDate;
+    private int likesCount;
+    private int shareCount;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy="posts")
-    private Set<PostAction> PostActions;
+    private Set<PostAction> postActions;
 
     @ManyToOne
     Subscription subscription;

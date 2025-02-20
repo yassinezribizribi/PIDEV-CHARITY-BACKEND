@@ -17,16 +17,18 @@ import java.util.Set;
 @Entity
 public class Healthcare implements Serializable {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)  // Permet l'auto-incrémentation
+
     private Long idHealthcare;
-    private String History;
-    private String TreatmentPlan;
-    private String TerminalDisease;
-    private Date  BookingDate;
+    private String history;
+    private String treatmentPlan;
+    private String terminalDisease;
+    private Date  bookingDate;
 
 
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy="healthcare")
-    private Set<Subscriber> Subscribers;
+    private Set<Subscriber> subscribers;
 
 
 }

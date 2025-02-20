@@ -15,10 +15,12 @@ import java.util.Set;
 @Entity
 public class Association implements Serializable {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)  // Permet l'auto-incrémentation
+
     private Long idAssociation;
-    private String AssociationName;
-    private String Description;
-    private Boolean Validated;
+    private String associationName;
+    private String description;
+    private Boolean validated;
 
     @ManyToMany(cascade = CascadeType.ALL)
     private Set<Subscription> subscriptions;
@@ -27,10 +29,10 @@ public class Association implements Serializable {
     private Set<Mission> missions;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy="association")
-    private Set<Event> Events;
+    private Set<Event> events;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy="association")
-    private Set<Notification> Notifications;
+    private Set<Notification> notifications;
 
 
 

@@ -1,31 +1,32 @@
 package tn.esprit.examen.nomPrenomClasseExamen.entities;
 
-
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-
 import java.io.Serializable;
-import java.util.Date;
-import java.util.Set;
 
 @Getter
 @Setter
 @ToString
 @AllArgsConstructor
 @NoArgsConstructor
-@FieldDefaults(level= AccessLevel.PRIVATE)
+@FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
 public class JobApplication implements Serializable {
+
     @Id
-    private Long idJob;
-    private Date applicationDate;
-    private JobApplicationStatus JobApplication;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long idApplication;
 
-    @ManyToMany(mappedBy="jobapplications", cascade = CascadeType.ALL)
-    private Set<Forum> forums;
+    private String applicationDate;
 
-    @OneToOne
-    private JobOffer joboffer;
+    @Enumerated(EnumType.STRING)
+    private JobApplicationStatus jobApplicationStatus;
 
+    @ManyToOne
+    private JobOffer jobOffer;
+
+
+    @ManyToOne
+    private Subscriber subscriber;
 }

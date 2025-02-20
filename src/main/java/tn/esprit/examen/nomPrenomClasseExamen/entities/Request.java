@@ -17,12 +17,14 @@ import java.util.Set;
 @Entity
 public class Request implements Serializable {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)  // Permet l'auto-incrémentation
+
     private Long idRequest;
     private Long idSender;
     private Long idReceiver;
-    private Date DateRequest;
-    private String Object;
-    private String Content;
+    private Date dateRequest;
+    private String object;
+    private String content;
     private Boolean isUrgent;
 
     @ManyToMany(cascade = CascadeType.ALL)

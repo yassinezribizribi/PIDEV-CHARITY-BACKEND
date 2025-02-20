@@ -1,32 +1,34 @@
 package tn.esprit.examen.nomPrenomClasseExamen.entities;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-
-import java.io.Serializable;
 import java.util.Set;
 
 @Getter
 @Setter
-@ToString
+@ToString(exclude = "jobApplications")
 @AllArgsConstructor
 @NoArgsConstructor
-@FieldDefaults(level= AccessLevel.PRIVATE)
+@FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-public class JobOffer implements Serializable {
+public class JobOffer {
+
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idJobOffer;
-    private String title ;
+    private String title;
     private String description;
-    private String requirments;
-    private Boolean isActive;
+    private String requirements;
+    private boolean isActive;
 
-    @OneToMany(cascade = CascadeType.ALL)
-    private Set<Forum> Forums;
+    @ManyToOne
+    private Forum forum;
 
 
+
+    @JsonIgnoreProperties({"jobApplications"})
+    @OneToMany(mappedBy = "jobOffer", cascade = CascadeType.ALL)
+    private Set<JobApplication> jobApplications;
 }

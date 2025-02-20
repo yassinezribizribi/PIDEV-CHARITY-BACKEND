@@ -16,14 +16,16 @@ import java.util.Set;
 @Entity
 public class Testimonial implements Serializable {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)  // Permet l'auto-incrémentation
+
     private Long idTestimonial;
-    private String Content;
-    private String BeforePhoto ;
-    private String AfterPhoto;
-    private String Description;
+    private String content;
+    private String beforePhoto ;
+    private String afterPhoto;
+    private String description;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy="testimonial")
-    private Set<PostAction> PostActions;
+    private Set<PostAction> postActions;
 
 
 }

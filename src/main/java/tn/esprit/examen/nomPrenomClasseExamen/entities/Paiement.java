@@ -15,9 +15,11 @@ import java.util.Date;
 @Entity
 public class Paiement implements Serializable {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)  // Permet l'auto-incrémentation
+
     private Long idPaiement;
-    private Date DatePaiement;
-    private int Montant ;
+    private Date datePaiement;
+    private int montant ;
 
     @ManyToOne
     Event event;
