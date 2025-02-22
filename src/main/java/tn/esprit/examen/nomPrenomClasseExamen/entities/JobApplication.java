@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -18,7 +19,7 @@ public class JobApplication implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idApplication;
 
-    private String applicationDate;
+    private LocalDateTime applicationDate;
 
     @Enumerated(EnumType.STRING)
     private JobApplicationStatus jobApplicationStatus;
@@ -28,5 +29,5 @@ public class JobApplication implements Serializable {
 
 
     @ManyToOne
-    private Subscriber subscriber;
+    private Subscriber applicant;
 }

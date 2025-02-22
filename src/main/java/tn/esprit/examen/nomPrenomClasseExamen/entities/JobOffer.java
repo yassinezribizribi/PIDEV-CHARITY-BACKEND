@@ -26,8 +26,6 @@ public class JobOffer {
     @ManyToOne
     private Forum forum;
 
-
-
     @JsonIgnoreProperties({"jobApplications"})
     @OneToMany(mappedBy = "jobOffer", cascade = CascadeType.ALL)
     private Set<JobApplication> jobApplications;
