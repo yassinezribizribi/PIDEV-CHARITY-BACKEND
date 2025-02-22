@@ -15,6 +15,7 @@ import java.util.Set;
 @Entity
 public class Association implements Serializable {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idAssociation;
     private String associationName;
     private String description;

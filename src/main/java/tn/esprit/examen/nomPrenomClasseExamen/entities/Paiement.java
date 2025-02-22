@@ -15,12 +15,12 @@ import java.util.Date;
 @Entity
 public class Paiement implements Serializable {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idPaiement;
+
     private Date datePaiement;
     private int montant ;
 
-    @ManyToOne
-    Event event;
 
 
 

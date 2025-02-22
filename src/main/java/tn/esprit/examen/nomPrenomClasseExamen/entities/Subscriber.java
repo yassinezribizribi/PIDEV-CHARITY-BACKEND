@@ -13,45 +13,34 @@ import java.util.Set;
 @NoArgsConstructor
 @FieldDefaults(level= AccessLevel.PRIVATE)
 @Entity
-public class Subscriber extends User {
+public class Subscriber extends User { // Inherits from User
+    @Enumerated(EnumType.STRING)
+    private Role role;
 
-    @Enumerated(EnumType.STRING) // Stocke le rôle en tant que texte dans la base de données
-    private Role role; // Change String -> Role (Enum)
-
-    // Role-specific fields (nullable for roles that don't use them)
     @Column(nullable = true)
-    private String skills;          // For VOLUNTEER
+    private String skills; // For VOLUNTEER
     @Column(nullable = true)
-    private String nationality;     // For REFUGEE
+    private String nationality; // For REFUGEE
     @Column(nullable = true)
-    private String expertiseArea;   // For MENTOR
+    private String expertiseArea; // For MENTOR
     @Column(nullable = true)
     private String associationRole; // For ASSOCIATION_MEMBER
 
     @ManyToOne
-    private Healthcare healthcare; // "healthcare" au lieu de "healthcares"
+    private Healthcare healthcare;
 
-
-    @OneToMany(cascade = CascadeType.ALL)
+    @OneToMany(cascade = CascadeType.PERSIST) // Cascade only persist and merge
     private Set<Animal> animals;
 
-
-
-    @ManyToMany(mappedBy="subscribers", cascade = CascadeType.ALL)
+    @ManyToMany(mappedBy = "subscribers", cascade = CascadeType.PERSIST)
     private Set<Donation> donations;
 
-    @ManyToMany(mappedBy="subscribers", cascade = CascadeType.ALL)
+    @ManyToMany(mappedBy = "subscribers", cascade = CascadeType.PERSIST)
     private Set<Training> trainings;
 
-    @ManyToMany(mappedBy="subscribers", cascade = CascadeType.ALL)
+    @ManyToMany(mappedBy = "subscribers", cascade = CascadeType.PERSIST)
     private Set<Forum> forums;
 
-    @OneToMany(mappedBy = "subscriber")
-    private List<Crisis> crises; // Liste des crises signalées par ce subscriber
-
-
-
-
-
-
+    @OneToMany(mappedBy = "subscriber", cascade = CascadeType.PERSIST)
+    private List<Crisis> crises;
 }
