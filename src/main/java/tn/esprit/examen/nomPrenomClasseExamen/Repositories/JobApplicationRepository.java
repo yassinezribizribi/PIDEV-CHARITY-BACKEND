@@ -7,5 +7,7 @@ import tn.esprit.examen.nomPrenomClasseExamen.entities.Subscriber;
 import java.util.List;
 
 public interface JobApplicationRepository extends JpaRepository<JobApplication, Long> {
-    List<JobApplication> findBySubscriber(Subscriber subscriber);
+    List<JobApplication> findByApplicant(Subscriber applicant);
+    List<JobApplication> findByApplicant_IdUser(Long idUser);
+
 }

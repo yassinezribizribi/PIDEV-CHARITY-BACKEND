@@ -1,6 +1,7 @@
 package tn.esprit.examen.nomPrenomClasseExamen.Configuration;
 
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -13,50 +14,44 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import tn.esprit.examen.nomPrenomClasseExamen.jwt.AuthTokenFilter;
 import tn.esprit.examen.nomPrenomClasseExamen.jwt.CustomAccessDeniedHandler;
 import tn.esprit.examen.nomPrenomClasseExamen.services.SubscriberDetailsServiceImpl;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
+@AllArgsConstructor
 public class WebSecurityConfig {
 
     private final AuthTokenFilter authTokenFilter;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
     private final SubscriberDetailsServiceImpl userDetailsService;
-    private static final Logger logger = LoggerFactory.getLogger(WebSecurityConfig.class);
-
-    public WebSecurityConfig(AuthTokenFilter authTokenFilter,
-                             CustomAccessDeniedHandler customAccessDeniedHandler,
-                             SubscriberDetailsServiceImpl userDetailsService) {
-        this.authTokenFilter = authTokenFilter;
-        this.customAccessDeniedHandler = customAccessDeniedHandler;
-        this.userDetailsService = userDetailsService;
-    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-                .cors(cors -> cors.disable()) // Désactive CORS si tu n’en as pas besoin
-                .csrf(csrf -> csrf.disable()) // Désactive CSRF (utile pour API REST)
-                .authorizeHttpRequests(auth -> {
-                    auth
-                            .requestMatchers("/api/auth/signup", "/api/auth/signin", "/generate/**", "/reset-password/**").permitAll()
-                            .anyRequest().authenticated(); // Toute autre requête nécessite une authentification
-                })
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .anyRequest().authenticated()
+                )
                 .exceptionHandling(exception -> exception
-                        .accessDeniedHandler((request, response, accessDeniedException) -> {
-                            logger.error("🔴 Accès refusé : URI = {}, Message = {}", request.getRequestURI(), accessDeniedException.getMessage());
-                            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Access Denied");
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
                         })
+                        .accessDeniedHandler(customAccessDeniedHandler)
                 )
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
-                .addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class) // Ajouter le filtre JWT
+                .addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 
@@ -68,5 +63,18 @@ public class WebSecurityConfig {
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:4200"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Cache-Control", "Content-Type"));
+        configuration.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 }

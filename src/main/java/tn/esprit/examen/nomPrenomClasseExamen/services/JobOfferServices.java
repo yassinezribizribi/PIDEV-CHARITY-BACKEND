@@ -1,18 +1,19 @@
 package tn.esprit.examen.nomPrenomClasseExamen.services;
 
-import lombok.RequiredArgsConstructor;
+import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import tn.esprit.examen.nomPrenomClasseExamen.Repositories.ForumRepository;
+import tn.esprit.examen.nomPrenomClasseExamen.Repositories.JobOfferRepository;
+import tn.esprit.examen.nomPrenomClasseExamen.dto.JobOfferDto;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Forum;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.JobOffer;
-import tn.esprit.examen.nomPrenomClasseExamen.Repositories.JobOfferRepository;
 
 import java.util.List;
 
 @Service
-@RequiredArgsConstructor
+@AllArgsConstructor
 public class JobOfferServices {
 
     private final JobOfferRepository jobOfferRepository;
@@ -25,28 +26,26 @@ public class JobOfferServices {
     }
 
     public JobOffer getJobOfferById(Long id) {
-        logger.info("Recherche de l'offre d'emploi avec l'ID: {}", id);
+        logger.info("🔍 Recherche de l'offre d'emploi avec l'ID: {}", id);
         return jobOfferRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("JobOffer avec l'ID " + id + " introuvable"));
     }
 
-
-    public JobOffer createJobOffer(JobOffer jobOffer) {
+    public JobOffer createJobOffer(JobOfferDto jobOfferDto) {
         try {
-            logger.info("📝 Création d'une nouvelle offre d'emploi: {}", jobOffer);
+            logger.info("📝 Création d'une nouvelle offre d'emploi: {}", jobOfferDto);
 
-            if (forumRepository == null) {
-                logger.error("❌ forumRepository is null!");
-                throw new RuntimeException("forumRepository is null!");
-            }
-
-            if (jobOffer.getForum() != null && jobOffer.getForum().getIdForum() == null) {
+            // Vérification et sauvegarde du Forum si nécessaire
+            if (jobOfferDto.getForum() != null && jobOfferDto.getForum().getIdForum() == null) {
                 logger.info("💾 Sauvegarde du Forum associé...");
-                Forum savedForum = forumRepository.save(jobOffer.getForum());
-                jobOffer.setForum(savedForum);
+                Forum savedForum = forumRepository.save(jobOfferDto.getForum());
+                jobOfferDto.setForum(savedForum);
             }
 
+            // Conversion DTO → Entité
+            JobOffer jobOffer = jobOfferDto.toJobOffer();
             JobOffer savedJobOffer = jobOfferRepository.save(jobOffer);
+
             logger.info("✅ Offre créée avec succès: {}", savedJobOffer);
             return savedJobOffer;
         } catch (Exception e) {
@@ -55,14 +54,20 @@ public class JobOfferServices {
         }
     }
 
-    public JobOffer updateJobOffer(Long id, JobOffer updatedJobOffer) {
+    public JobOffer updateJobOffer(Long id, JobOfferDto jobOfferDto) {
         logger.info("🔄 Mise à jour de l'offre d'emploi avec ID: {}", id);
         JobOffer jobOffer = getJobOfferById(id);
 
-        jobOffer.setTitle(updatedJobOffer.getTitle());
-        jobOffer.setDescription(updatedJobOffer.getDescription());
-        jobOffer.setRequirements(updatedJobOffer.getRequirements());
-        jobOffer.setActive(updatedJobOffer.isActive());
+        // Mise à jour des champs à partir du DTO
+        jobOffer.setTitle(jobOfferDto.getTitle());
+        jobOffer.setDescription(jobOfferDto.getDescription());
+        jobOffer.setRequirements(jobOfferDto.getRequirements());
+        jobOffer.setActive(jobOfferDto.isActive());
+
+        // Vérification et mise à jour du forum si nécessaire
+        if (jobOfferDto.getForum() != null) {
+            jobOffer.setForum(jobOfferDto.getForum());
+        }
 
         JobOffer updated = jobOfferRepository.save(jobOffer);
         logger.info("✅ Offre mise à jour avec succès: {}", updated);

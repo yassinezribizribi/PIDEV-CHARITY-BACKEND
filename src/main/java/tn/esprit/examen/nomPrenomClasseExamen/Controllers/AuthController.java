@@ -53,7 +53,7 @@ public class AuthController {
     public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
         System.out.println("🔍 Tentative de connexion...");
 
-        if (loginRequest == null) {
+        if (loginRequest.getEmail()== null||loginRequest.getEmail().isEmpty() ) {
             System.out.println("❌ loginRequest est NULL !");
             return ResponseEntity.badRequest().body("INVALID REQUEST");
         }
