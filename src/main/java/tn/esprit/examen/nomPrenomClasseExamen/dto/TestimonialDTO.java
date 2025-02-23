@@ -1,26 +1,12 @@
-package tn.esprit.examen.nomPrenomClasseExamen.entities;
+package tn.esprit.examen.nomPrenomClasseExamen.dto;
 
-import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.*;
-import lombok.experimental.FieldDefaults;
+import lombok.Data;
 
-import java.io.Serializable;
-
-@Getter
-@Setter
-@ToString
-@AllArgsConstructor
-@NoArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE)
-@Entity
-public class Testimonial implements Serializable {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long idTestimonial;
+@Data
+public class TestimonialDTO {
 
     @NotBlank(message = "Le contenu ne peut pas être vide")
     @Size(min = 10, max = 500, message = "Le contenu doit être entre 10 et 500 caractères")
@@ -35,9 +21,6 @@ public class Testimonial implements Serializable {
     @Size(max = 1000, message = "La description ne doit pas dépasser 1000 caractères")
     private String description;
 
-    // ✅ Relation avec User (un testimonial appartient à un utilisateur)
     @NotNull(message = "L'utilisateur est obligatoire")
-    @ManyToOne
-    @JoinColumn(name = "id_user", nullable = false)
-    private User user;
+    private Long userId;
 }

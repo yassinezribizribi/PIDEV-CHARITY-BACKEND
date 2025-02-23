@@ -1,12 +1,11 @@
 package tn.esprit.examen.nomPrenomClasseExamen.entities;
+
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.io.Serializable;
 import java.util.Date;
-import java.util.List;
-import java.util.Set;
 
 @Getter
 @Setter
@@ -17,16 +16,17 @@ import java.util.Set;
 @Entity
 public class Healthcare implements Serializable {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idHealthcare;
+
     private String history;
     private String treatmentPlan;
     private String terminalDisease;
-    private Date  bookingDate;
 
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date bookingDate;
 
-
-    @OneToMany(cascade = CascadeType.ALL, mappedBy="healthcare")
-    private Set<Subscriber> subscribers;
-
-
+    @ManyToOne
+    @JoinColumn(name = "subscriber_id", nullable = true)
+    private Subscriber subscriber;
 }

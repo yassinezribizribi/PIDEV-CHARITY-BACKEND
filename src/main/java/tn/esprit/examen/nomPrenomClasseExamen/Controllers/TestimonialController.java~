@@ -1,6 +1,5 @@
 package tn.esprit.examen.nomPrenomClasseExamen.Controllers;
 
-import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -23,21 +22,33 @@ public class TestimonialController {
     private ITestimonialServices testimonialService;
 
     @PostMapping("/add")
-    public ResponseEntity<Testimonial> createTestimonial(@Valid @RequestBody TestimonialDTO testimonialDTO) {
-        Testimonial testimonial = testimonialService.addTestimonial(testimonialDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body(testimonial);
+    public ResponseEntity<Testimonial> createTestimonial(@RequestBody TestimonialDTO testimonialDTO) {
+        try {
+            Testimonial testimonial = testimonialService.addTestimonial(testimonialDTO);
+            return ResponseEntity.status(HttpStatus.CREATED).body(testimonial);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Testimonial> updateTestimonial(@PathVariable Long id, @Valid @RequestBody TestimonialDTO testimonialDTO) {
-        Testimonial updatedTestimonial = testimonialService.updateTestimonial(id, testimonialDTO);
-        return ResponseEntity.ok(updatedTestimonial);
+    public ResponseEntity<Testimonial> updateTestimonial(@PathVariable Long id, @RequestBody TestimonialDTO testimonialDTO) {
+        try {
+            Testimonial updatedTestimonial = testimonialService.updateTestimonial(id, testimonialDTO);
+            return ResponseEntity.ok(updatedTestimonial);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTestimonial(@PathVariable Long id) {
-        testimonialService.deleteTestimonial(id);
-        return ResponseEntity.noContent().build();
+        try {
+            testimonialService.deleteTestimonial(id);
+            return ResponseEntity.noContent().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @GetMapping("/{id}")

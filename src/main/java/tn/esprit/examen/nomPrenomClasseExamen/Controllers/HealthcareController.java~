@@ -5,8 +5,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import tn.esprit.examen.nomPrenomClasseExamen.dto.HealthcareDTO;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Healthcare;
+import tn.esprit.examen.nomPrenomClasseExamen.services.IHealthcareServices;
 import tn.esprit.examen.nomPrenomClasseExamen.services.IHealthcareServices;
 
 import java.util.List;
@@ -23,16 +23,16 @@ public class HealthcareController {
 
     // 🔹 Ajouter un Healthcare
     @PostMapping("/add")
-    public ResponseEntity<Healthcare> createHealthcare(@RequestBody HealthcareDTO healthcareDTO) {
-        Healthcare healthcare = healthcareService.addHealthcare(healthcareDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body(healthcare);
+    public ResponseEntity<Healthcare> createHealthcare(@RequestBody Healthcare healthcare) {
+        Healthcare createdHealthcare = healthcareService.addHealthcare(healthcare);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdHealthcare);
     }
 
     // 🔹 Modifier un Healthcare
     @PutMapping("/{id}")
-    public ResponseEntity<Healthcare> updateHealthcare(@PathVariable Long id, @RequestBody HealthcareDTO healthcareDTO) {
+    public ResponseEntity<Healthcare> updateHealthcare(@PathVariable Long id, @RequestBody Healthcare healthcare) {
         try {
-            Healthcare updatedHealthcare = healthcareService.updateHealthcare(id, healthcareDTO);
+            Healthcare updatedHealthcare = healthcareService.updateHealthcare(id, healthcare);
             return ResponseEntity.ok(updatedHealthcare);
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();

@@ -51,38 +51,25 @@ public class AuthTokenFilter extends OncePerRequestFilter {
             String jwt = parseJwt(request);
             if (jwt == null) {
                 logger.warn("⚠️ Aucun token trouvé dans la requête !");
-                filterChain.doFilter(request, response);
-                return;
+            } else {
+                logger.info("🔍 Token extrait : " + jwt);
             }
 
-            logger.info("🔍 Token extrait : " + jwt);
+            // ✅ Validation et authentification
+            if (jwt != null && jwtUtils.validateJwtToken(jwt)) {
+                // Changer ici pour extraire l'email au lieu du username
+                String email = jwtUtils.getUserNameFromJwtToken(jwt); // Assurez-vous que cette méthode extrait bien l'email
+                logger.info("✅ Token valide pour l'utilisateur avec email : " + email);
 
-            // ✅ Validation du token
-            if (jwtUtils.validateJwtToken(jwt)) {
-                // ✅ Extraction de l'ID utilisateur ou de l'email depuis le JWT
-                String userIdentifier = jwtUtils.getUserNameFromJwtToken(jwt);
-                logger.info("✅ Token valide pour l'utilisateur : " + userIdentifier);
+                // Charger les détails de l'utilisateur en utilisant l'email
+                UserDetails userDetails = subDetailsService.loadUserByUsername(email);
+                // Utilisation de l'email au lieu du prénom
+                logger.info("******");
 
-                if (userIdentifier == null || userIdentifier.trim().isEmpty() || userIdentifier.equals("0")) {
-                    logger.error("❌ JWT ne contient pas d'identifiant valide !");
-                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token invalide.");
-                    return;
-                }
+                logger.info(userDetails.getAuthorities().toString());
 
-                // ✅ Charger les détails de l'utilisateur via l'identifiant
-                UserDetails userDetails = subDetailsService.loadUserByUsername(userIdentifier);
-
-                if (userDetails == null) {
-                    logger.error("❌ Utilisateur non trouvé pour l'identifiant : " + userIdentifier);
-                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Utilisateur non trouvé.");
-                    return;
-                }
-
-                logger.info("✅ Utilisateur authentifié avec succès : " + userDetails.getUsername());
-
-                // ✅ Créer l'authentification et mettre à jour le contexte de sécurité
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities());
+                        userDetails, jwt, userDetails.getAuthorities());
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -90,24 +77,24 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                 logger.warn("⛔ Token invalide !");
             }
 
-            // ✅ Continuer le filtre
+            // ✅ Continuer le filtre seulement si aucune erreur
             filterChain.doFilter(request, response);
 
         } catch (ExpiredJwtException ex) {
             logger.error("❌ Le token JWT a expiré : {}", ex.getMessage());
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Le token a expiré.");
+
         } catch (MalformedJwtException ex) {
             logger.error("❌ Token JWT mal formé : {}", ex.getMessage());
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Token invalide.");
+
         } catch (Exception e) {
             logger.error("❌ Erreur d'authentification : {}", e.getMessage());
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Erreur d'authentification.");
         }
     }
 
-    /**
-     * ✅ Extraire le JWT de l'en-tête Authorization
-     */
+
     private String parseJwt(HttpServletRequest request) {
         String headerAuth = request.getHeader("Authorization");
 
