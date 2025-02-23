@@ -17,6 +17,7 @@ import java.util.Set;
 @Entity
 public class Request implements Serializable {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idRequest;
     private Long idSender;
     private Long idReceiver;

@@ -1,5 +1,6 @@
 package tn.esprit.examen.nomPrenomClasseExamen.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -29,7 +30,8 @@ public class Subscriber extends User { // Inherits from User
     @ManyToOne
     private Healthcare healthcare;
 
-    @OneToMany(cascade = CascadeType.PERSIST) // Cascade only persist and merge
+    @OneToMany(mappedBy = "subscriber" , cascade = CascadeType.PERSIST) // Cascade only persist and merge
+    @JsonIgnore
     private Set<Animal> animals;
 
     @ManyToMany(mappedBy = "subscribers", cascade = CascadeType.PERSIST)

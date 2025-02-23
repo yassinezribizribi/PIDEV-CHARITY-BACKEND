@@ -1,5 +1,6 @@
 package tn.esprit.examen.nomPrenomClasseExamen.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -15,6 +16,7 @@ import java.io.Serializable;
 @Entity
 public class Animal implements Serializable {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long IdAnimal;
     private String name;
     private String animalSpecies;
@@ -24,5 +26,10 @@ public class Animal implements Serializable {
 
     @OneToOne
     private Healthcare healthcare;
+
+    @ManyToOne
+    @JoinColumn(name = "id_user")
+    @JsonIgnore
+    private Subscriber subscriber;
 
 }

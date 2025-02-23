@@ -16,6 +16,7 @@ import java.util.Set;
 @Entity
 public class Donation implements Serializable {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idDonation;
     private String quantite ;
     private Boolean availability;

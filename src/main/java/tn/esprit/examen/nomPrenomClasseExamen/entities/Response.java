@@ -16,6 +16,7 @@ import java.util.Set;
 @Entity
 public class Response implements Serializable {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idRespons;
     private Long idSender;
     private Long idReceiver;

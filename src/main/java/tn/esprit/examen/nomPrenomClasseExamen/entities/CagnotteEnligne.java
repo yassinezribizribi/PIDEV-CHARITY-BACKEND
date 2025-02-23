@@ -16,6 +16,7 @@ import java.util.Set;
 public class CagnotteEnligne implements Serializable {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idCagnotte;
     private String title;
     private String description;

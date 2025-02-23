@@ -1,5 +1,6 @@
 package tn.esprit.examen.nomPrenomClasseExamen.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -16,6 +17,7 @@ import java.util.Date;
 @Entity
 public class PostAction implements Serializable {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idAction;
     private TypeAction typeAction;
     private Date dateAction;
@@ -23,6 +25,8 @@ public class PostAction implements Serializable {
     @ManyToOne
     Testimonial testimonial;
     @ManyToOne
+    @JoinColumn(name = "post_id")
+    @JsonIgnore
     Posts posts;
 
 

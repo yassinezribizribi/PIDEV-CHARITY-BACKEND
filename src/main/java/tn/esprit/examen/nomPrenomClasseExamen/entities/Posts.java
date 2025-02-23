@@ -1,5 +1,6 @@
 package tn.esprit.examen.nomPrenomClasseExamen.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -18,6 +19,7 @@ import java.util.Set;
 public class Posts implements Serializable{
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idPosts;
     private String content;
     private Date creationDate;
@@ -25,14 +27,12 @@ public class Posts implements Serializable{
     private int shareCount;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy="posts")
+    @JsonIgnore
     private Set<PostAction> postActions;
 
     @ManyToOne
+    @JsonIgnore
     Subscription subscription;
-
-
-
-
 
 
 }

@@ -1,9 +1,6 @@
 package tn.esprit.examen.nomPrenomClasseExamen.entities;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -19,6 +16,7 @@ import java.util.Set;
 @Entity
 public class JobOffer implements Serializable {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idJobOffer;
     private String title ;
     private String description;

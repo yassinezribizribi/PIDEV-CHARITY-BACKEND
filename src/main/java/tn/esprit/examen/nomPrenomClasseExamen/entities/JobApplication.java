@@ -18,6 +18,7 @@ import java.util.Set;
 @Entity
 public class JobApplication implements Serializable {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idJob;
     private Date applicationDate;
     private JobApplicationStatus JobApplication;
