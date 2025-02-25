@@ -37,7 +37,7 @@ public class EventController {
     }
 
     // 🟠 Mettre à jour un événement
-    @PutMapping("/{id}")
+    @PutMapping("/updateEvent/{id}")
     public ResponseEntity<Event> updateEvent(@PathVariable Long id,@Valid @RequestBody Event updatedEvent) {
         try {
             Event event = eventServices.updateEvent(id, updatedEvent);
@@ -49,7 +49,7 @@ public class EventController {
     }
 
     // 🟠 Supprimer un événement
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/deleteEvent/{id}")
     public ResponseEntity<Void> deleteEvent(@PathVariable Long id) {
         try {
             eventServices.deleteEvent(id);
@@ -61,14 +61,14 @@ public class EventController {
     }
 
     // 🟠 Obtenir un événement par son ID
-    @GetMapping("/{id}")
+    @GetMapping("/getEventById/{id}")
     public ResponseEntity<Event> getEventById(@PathVariable Long id) {
         Optional<Event> event = eventServices.getEventById(id);
         return event.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     // 🟠 Obtenir tous les événements
-    @GetMapping
+    @GetMapping("/getAllEvents")
     public ResponseEntity<List<Event>> getAllEvents() {
         List<Event> events = eventServices.getAllEvents();
         return ResponseEntity.ok(events);
@@ -82,7 +82,7 @@ public class EventController {
     }
 
     // 🟠 Ajouter une notification à un événement
-    @PostMapping("/{eventId}/notifications/add")
+    @PostMapping("/addNotificationToEvent/{eventId}/notifications/add")
     public ResponseEntity<Event> addNotificationToEvent(@PathVariable Long eventId,@Valid @RequestBody Notification notification) {
         try {
             Event updatedEvent = eventServices.addNotificationToEvent(eventId, notification);

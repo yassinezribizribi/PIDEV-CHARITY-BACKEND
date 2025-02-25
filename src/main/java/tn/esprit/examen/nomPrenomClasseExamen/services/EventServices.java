@@ -30,10 +30,7 @@ public class EventServices implements IEventServices {
         @Autowired
         private AssociationRepository associationRepository;
 
-    @Autowired
-    public EventServices(PaiementRepository paiementRepository) {
-        this.paiementRepository = paiementRepository;
-    }
+
         @Override
         public Event addEvent(EventDTO eventDTO) {
             if (eventDTO == null) {

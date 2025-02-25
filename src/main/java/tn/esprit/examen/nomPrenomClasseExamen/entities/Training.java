@@ -1,5 +1,6 @@
 package tn.esprit.examen.nomPrenomClasseExamen.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
@@ -49,5 +50,6 @@ public class Training implements Serializable {
     private Date sessionDate;
 
     @ManyToMany(cascade = CascadeType.ALL)
+    @JsonIgnore
     private Set<Subscriber> subscribers;
 }

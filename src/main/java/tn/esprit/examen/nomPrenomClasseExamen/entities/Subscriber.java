@@ -1,5 +1,6 @@
 package tn.esprit.examen.nomPrenomClasseExamen.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -36,6 +37,7 @@ public class Subscriber extends User { // Inherits from User
     private Set<Donation> donations;
 
     @ManyToMany(mappedBy = "subscribers", cascade = CascadeType.PERSIST)
+    @JsonIgnore
     private Set<Training> trainings;
 
     @ManyToMany(mappedBy = "subscribers", cascade = CascadeType.PERSIST)

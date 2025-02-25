@@ -1,4 +1,5 @@
 package tn.esprit.examen.nomPrenomClasseExamen.entities;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -28,9 +29,11 @@ public class Association implements Serializable {
     private Set<Mission> missions;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy="association")
+    @JsonIgnore
     private Set<Event> events;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy="association")
+    @JsonIgnore
     private Set<Notification> notifications;
 
 

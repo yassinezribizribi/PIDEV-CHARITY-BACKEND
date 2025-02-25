@@ -81,14 +81,11 @@ public class TrainingController {
     }
 
     // 🟠 Ajouter un abonné à une formation
-    @PostMapping("/{trainingId}/subscribers/{subscriberId}/add")
-    public ResponseEntity<Training> addSubscriberToTraining(@Valid @PathVariable Long trainingId, @PathVariable Long subscriberId) {
-        try {
-            Training training = trainingServices.addSubscriberToTraining(trainingId, subscriberId);
-            return ResponseEntity.ok(training);
-        } catch (IllegalArgumentException | NoSuchElementException e) {
-            log.error("Erreur lors de l'ajout de l'abonné à la formation : {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-        }
+    @PostMapping("/{trainingId}/add-subscriber/{userId}")
+    public ResponseEntity<Training> addSubscriberToTraining(@PathVariable Long trainingId, @PathVariable Long userId) {
+        // Appel du service pour ajouter un abonné (réfugié) à la formation
+        Training training = trainingServices.addSubscriberToTraining(trainingId, userId);
+        return ResponseEntity.ok(training); // Retourne le training mis à jour
     }
-}
+    }
+

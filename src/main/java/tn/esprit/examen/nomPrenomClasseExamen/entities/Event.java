@@ -1,5 +1,6 @@
 package tn.esprit.examen.nomPrenomClasseExamen.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
@@ -47,9 +48,11 @@ public class Event implements Serializable {
 
     @ManyToOne
     @JoinColumn(name = "association_id_association")
+    @JsonIgnore
     private Association association;
 
     @OneToMany(mappedBy = "event", cascade = CascadeType.ALL)
+    @JsonIgnore
     private Set<Notification> notifications;
 
 }
