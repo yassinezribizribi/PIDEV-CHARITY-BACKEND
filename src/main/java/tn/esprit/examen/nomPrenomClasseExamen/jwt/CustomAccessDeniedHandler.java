@@ -39,4 +39,5 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
         // Écrit la réponse JSON pour le client
         response.getWriter().write(json);
     }
+
 }

@@ -2,6 +2,8 @@ package tn.esprit.examen.nomPrenomClasseExamen.jwt;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,9 +13,14 @@ import org.springframework.stereotype.Component;
 import tn.esprit.examen.nomPrenomClasseExamen.services.SubDetailsImpl;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Component
+@NoArgsConstructor
+@AllArgsConstructor
+
 public class JwtUtils {
     private static final Logger logger = LoggerFactory.getLogger(JwtUtils.class);
 
@@ -27,16 +34,20 @@ public class JwtUtils {
         SubDetailsImpl userPrincipal = (SubDetailsImpl) authentication.getPrincipal();
         logger.debug("🔑 Génération du JWT pour l'utilisateur : {}", userPrincipal.getEmail());
 
+        // Create claims with idUser
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("idUser", userPrincipal.getId()); // ✅ Ensure idUser is included
+        claims.put("roles", userPrincipal.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList())
+        );
+
         return Jwts.builder()
-                .setSubject(userPrincipal.getEmail())  // Utilisation de l'email comme sujet
-                .claim("roles", userPrincipal.getAuthorities().stream()
-                        .map(GrantedAuthority::getAuthority)
-                        .collect(Collectors.toList())
-                )
+                .setClaims(claims) // ✅ Use the claims map
+                .setSubject(userPrincipal.getEmail())  // Email as subject
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
-                .setId(String.valueOf(userPrincipal.getId()))
-                .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes()), SignatureAlgorithm.HS256) // Encodage de la clé
+                .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes()), SignatureAlgorithm.HS256)
                 .compact();
     }
 
@@ -47,6 +58,16 @@ public class JwtUtils {
                 .getBody()
                 .getSubject();
     }
+    public Long getUserIdFromJwtToken(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(Keys.hmacShaKeyFor(jwtSecret.getBytes()))
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+
+        return claims.get("idUser", Long.class); // Extract idUser from claims
+    }
+
 
     public boolean validateJwtToken(String authToken) {
         try {

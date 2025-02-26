@@ -5,11 +5,12 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.util.Set;
+
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@FieldDefaults(level= AccessLevel.PRIVATE)
+@FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
 public class Subscriber extends User {
 
@@ -28,6 +29,9 @@ public class Subscriber extends User {
     @ManyToOne
     private Healthcare healthcare;
 
+    @OneToOne(mappedBy = "subscriber", cascade = CascadeType.ALL)
+    private Association association;
+
     @OneToMany(cascade = CascadeType.ALL)
     private Set<Animal> animals;
 
@@ -36,13 +40,11 @@ public class Subscriber extends User {
 
     @ManyToMany(mappedBy="subscribers", cascade = CascadeType.ALL)
     private Set<Training> trainings;
+
     @ManyToMany(mappedBy = "subscribers")
     private Set<Forum> forums;
 
-
-
-
-
-
-
+    // New field to track job offers created by the subscriber
+    @OneToMany(mappedBy = "createdBy", cascade = CascadeType.ALL)
+    private Set<JobOffer> jobOffers; // This field will track the job offers created by this subscriber
 }

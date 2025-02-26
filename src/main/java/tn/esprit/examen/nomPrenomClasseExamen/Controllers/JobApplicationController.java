@@ -8,7 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import tn.esprit.examen.nomPrenomClasseExamen.dto.JobApplicationDto;
 import tn.esprit.examen.nomPrenomClasseExamen.services.JobApplicationServices;
-
+import tn.esprit.examen.nomPrenomClasseExamen.jwt.JwtUtils;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -18,6 +18,7 @@ import java.util.List;
 public class JobApplicationController {
 
     private final JobApplicationServices jobApplicationService;
+    private final JwtUtils jwtUtils;
 
     private static final Logger logger = LoggerFactory.getLogger(JobApplicationController.class);
 
@@ -50,21 +51,23 @@ public class JobApplicationController {
         return ResponseEntity.ok(applications);
     }
 
-    @PostMapping
-    public ResponseEntity<JobApplicationDto> createJobApplication(@Valid @RequestBody JobApplicationDto jobApplicationDto) {
-        logger.info("Creating a new job application for applicant id: {}", jobApplicationDto.getApplicantId());
+    @CrossOrigin(origins = "http://localhost:4200")  // Allow requests from your frontend's domain
+    @PostMapping("/{jobOfferId}")
+    public ResponseEntity<JobApplicationDto> applyForJob(
+            @PathVariable Long jobOfferId,
+            @RequestHeader("Authorization") String token) {
 
-        // Set applicationDate to current date and time if it's null or set it on the backend directly
-        if (jobApplicationDto.getApplicationDate() == null) {
-            jobApplicationDto.setApplicationDate(LocalDateTime.now()); // Current date and time
-        }
+        // Extract idUser from JWT Token
+        String jwtToken = token.replace("Bearer ", "");
+        Long applicantId = jwtUtils.getUserIdFromJwtToken(jwtToken);
 
-        JobApplicationDto createdApplication = jobApplicationService.createJobApplication(jobApplicationDto);
-        logger.info("Job application created with id: {}", createdApplication.getIdApplication());
+        logger.info("User with ID {} is applying for job offer {}", applicantId, jobOfferId);
+
+        // Apply for the job
+        JobApplicationDto createdApplication = jobApplicationService.applyForJob(jobOfferId, applicantId);
 
         return ResponseEntity.status(201).body(createdApplication);
     }
-
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteJobApplication(@PathVariable Long id) {

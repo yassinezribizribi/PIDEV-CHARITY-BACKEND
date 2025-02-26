@@ -1,5 +1,6 @@
 package tn.esprit.examen.nomPrenomClasseExamen.entities;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -10,7 +11,7 @@ import java.util.Set;
 
 @Getter
 @Setter
-@ToString
+
 @AllArgsConstructor
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -20,7 +21,6 @@ public class Forum implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_forum")  // Spécifier le nom correct
     private Long idForum;
-
 
     private Date dateCreation;
 
@@ -36,6 +36,7 @@ public class Forum implements Serializable {
     private Set<Subscriber> subscribers;
 
     @OneToMany(mappedBy = "forum", cascade = CascadeType.ALL)
+    @JsonBackReference
     private List<JobOffer> jobOffers;
 
 }

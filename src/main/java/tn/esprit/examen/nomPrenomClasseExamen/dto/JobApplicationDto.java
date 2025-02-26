@@ -16,15 +16,12 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class JobApplicationDto {
 
-    @NotNull(message = "Application ID cannot be null")
     private Long idApplication;
 
     private LocalDateTime applicationDate;
     @NotNull(message = "Job Application Status cannot be null")
     private JobApplicationStatus jobApplicationStatus;
-    @Positive(message = "Job Offer ID must be a positive number")
     private Long jobOfferId;
-    @Positive(message = "Applicant ID must be a positive number")
     private Long applicantId;
 
     // Méthode statique pour convertir une entité en DTO

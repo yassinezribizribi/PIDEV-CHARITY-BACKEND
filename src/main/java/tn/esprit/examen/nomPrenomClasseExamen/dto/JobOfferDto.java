@@ -5,13 +5,12 @@ import lombok.*;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Forum;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.JobApplication;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.JobOffer;
+import tn.esprit.examen.nomPrenomClasseExamen.entities.Subscriber;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.Set;
 
-/**
- * DTO for {@link tn.esprit.examen.nomPrenomClasseExamen.entities.JobOffer}
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -24,6 +23,10 @@ public class JobOfferDto implements Serializable {
     private Forum forum;
     private Set<JobApplication> jobApplications;
 
+    // New fields for createdBy and createdAt
+    private Long createdById;  // We will pass the user ID from the token
+    private LocalDateTime createdAt;
+
     // Convert DTO to Entity
     public JobOffer toJobOffer() {
         JobOffer jobOffer = new JobOffer();
@@ -34,6 +37,7 @@ public class JobOfferDto implements Serializable {
         jobOffer.setActive(this.isActive);
         jobOffer.setForum(this.forum);
         jobOffer.setJobApplications(this.jobApplications);
+        jobOffer.setCreatedAt(this.createdAt);
         return jobOffer;
     }
 
@@ -46,7 +50,9 @@ public class JobOfferDto implements Serializable {
                 jobOffer.getRequirements(),
                 jobOffer.isActive(),
                 jobOffer.getForum(),
-                jobOffer.getJobApplications()
+                jobOffer.getJobApplications(),
+                jobOffer.getCreatedBy() != null ? jobOffer.getCreatedBy().getIdUser() : null, // Get ID of the creator
+                jobOffer.getCreatedAt()
         );
     }
 }

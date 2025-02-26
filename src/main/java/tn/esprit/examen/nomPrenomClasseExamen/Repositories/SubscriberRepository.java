@@ -25,4 +25,5 @@ public interface SubscriberRepository extends JpaRepository<Subscriber, Long> {
 
     @Query("SELECT s FROM Subscriber s WHERE s.idUser != :idUser")
     List<Subscriber> findAllExceptUser(@Param("idUser")  Long idUser);
+
 }
