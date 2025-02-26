@@ -4,7 +4,10 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.annotations.CreationTimestamp;
+
 import java.util.Set;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -21,12 +24,21 @@ public class JobOffer {
     private String title;
     private String description;
     private String requirements;
-    private boolean isActive;
+    private boolean isActive=true;
 
     @ManyToOne
+    @JsonIgnoreProperties
     private Forum forum;
 
-    @JsonIgnoreProperties({"jobApplications"})
     @OneToMany(mappedBy = "jobOffer", cascade = CascadeType.ALL)
+    @JsonIgnoreProperties({"jobApplications"})
     private Set<JobApplication> jobApplications;
+
+    @ManyToOne
+    @JsonIgnoreProperties({"jobOffers"}) // Avoid recursion if necessary
+    private Subscriber createdBy;  // New field for the creator of the JobOffer
+
+    @CreationTimestamp
+    @Column(updatable = false)
+    private LocalDateTime createdAt = LocalDateTime.now(); // Time when the job offer is created
 }

@@ -21,41 +21,34 @@ public class JobOfferController {
 
     @GetMapping
     public ResponseEntity<List<JobOffer>> getAllJobOffers() {
-        return ResponseEntity.ok(jobOfferService.getAllJobOffers());
+        List<JobOffer> jobOffers = jobOfferService.getAllJobOffers();
+        logger.info("✅ Réponse API : {}", jobOffers);
+        return ResponseEntity.ok(jobOffers);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<JobOffer> getJobOfferById(@PathVariable Long id) {
-        return ResponseEntity.ok(jobOfferService.getJobOfferById(id));
+        JobOffer jobOffer = jobOfferService.getJobOfferById(id);
+        logger.info("✅ Réponse API : {}", jobOffer);
+        return ResponseEntity.ok(jobOffer);
     }
 
     @PostMapping
-    public ResponseEntity<?> createJobOffer(@RequestBody JobOfferDto jobOfferDto) {
-        try {
-            logger.info("📝 Requête POST reçue pour créer une offre: {}", jobOfferDto);
-            JobOffer createdJobOffer = jobOfferService.createJobOffer(jobOfferDto);
-            return ResponseEntity.ok(createdJobOffer);
-        } catch (Exception e) {
-            logger.error("❌ Erreur lors de la création de l'offre: {}", e.getMessage(), e);
-            return ResponseEntity.internalServerError().body("Erreur: " + e.getMessage());
-        }
+    public ResponseEntity<JobOffer> createJobOffer(@RequestBody JobOfferDto jobOfferDto) {
+        JobOffer createdJobOffer = jobOfferService.createJobOffer(jobOfferDto);
+        logger.info("✅ Réponse API : {}", createdJobOffer);
+        return ResponseEntity.status(201).body(createdJobOffer);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateJobOffer(@PathVariable Long id, @RequestBody JobOfferDto jobOfferDto) {
-        try {
-            logger.info("🔄 Requête PUT reçue pour mettre à jour l'offre avec ID: {}", id);
-            JobOffer updatedJobOffer = jobOfferService.updateJobOffer(id, jobOfferDto);
-            return ResponseEntity.ok(updatedJobOffer);
-        } catch (Exception e) {
-            logger.error("❌ Erreur lors de la mise à jour de l'offre: {}", e.getMessage(), e);
-            return ResponseEntity.internalServerError().body("Erreur: " + e.getMessage());
-        }
+    public ResponseEntity<JobOffer> updateJobOffer(@PathVariable Long id, @RequestBody JobOfferDto jobOfferDto) {
+        JobOffer updatedJobOffer = jobOfferService.updateJobOffer(id, jobOfferDto);
+        logger.info("✅ Réponse API : {}", updatedJobOffer);
+        return ResponseEntity.ok(updatedJobOffer);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteJobOffer(@PathVariable Long id) {
-        logger.info("🗑 Requête DELETE reçue pour supprimer l'offre avec ID: {}", id);
         jobOfferService.deleteJobOffer(id);
         return ResponseEntity.noContent().build();
     }

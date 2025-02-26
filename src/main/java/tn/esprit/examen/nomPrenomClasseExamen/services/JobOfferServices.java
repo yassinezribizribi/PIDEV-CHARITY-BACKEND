@@ -3,13 +3,18 @@ package tn.esprit.examen.nomPrenomClasseExamen.services;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import tn.esprit.examen.nomPrenomClasseExamen.Repositories.ForumRepository;
 import tn.esprit.examen.nomPrenomClasseExamen.Repositories.JobOfferRepository;
+import tn.esprit.examen.nomPrenomClasseExamen.Repositories.SubscriberRepository; // Add Subscriber repository to fetch the user
 import tn.esprit.examen.nomPrenomClasseExamen.dto.JobOfferDto;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Forum;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.JobOffer;
+import tn.esprit.examen.nomPrenomClasseExamen.entities.Subscriber;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -18,6 +23,7 @@ public class JobOfferServices {
 
     private final JobOfferRepository jobOfferRepository;
     private final ForumRepository forumRepository;
+    private final SubscriberRepository subscriberRepository; // To fetch the subscriber
     private static final Logger logger = LoggerFactory.getLogger(JobOfferServices.class);
 
     public List<JobOffer> getAllJobOffers() {
@@ -35,15 +41,22 @@ public class JobOfferServices {
         try {
             logger.info("📝 Création d'une nouvelle offre d'emploi: {}", jobOfferDto);
 
-            // Vérification et sauvegarde du Forum si nécessaire
-            if (jobOfferDto.getForum() != null && jobOfferDto.getForum().getIdForum() == null) {
-                logger.info("💾 Sauvegarde du Forum associé...");
-                Forum savedForum = forumRepository.save(jobOfferDto.getForum());
-                jobOfferDto.setForum(savedForum);
-            }
+            // Récupération du forum avec ID 1
+            Forum forum = forumRepository.findById(1L)
+                    .orElseThrow(() -> new RuntimeException("Forum avec ID 1 introuvable"));
+
+            // Extract the current logged-in user (subscriber) from the token
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String email = authentication.getName(); // Get the username (which could be the user ID)
+            Subscriber subscriber = subscriberRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("Subscriber not found"));
 
             // Conversion DTO → Entité
             JobOffer jobOffer = jobOfferDto.toJobOffer();
+            jobOffer.setForum(forum); // Association automatique
+            jobOffer.setCreatedBy(subscriber); // Set the user who created the job offer
+            jobOffer.setCreatedAt(LocalDateTime.now()); // Set the creation timestamp
+
             JobOffer savedJobOffer = jobOfferRepository.save(jobOffer);
 
             logger.info("✅ Offre créée avec succès: {}", savedJobOffer);

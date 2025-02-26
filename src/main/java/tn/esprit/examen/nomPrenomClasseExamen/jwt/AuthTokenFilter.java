@@ -1,7 +1,6 @@
 package tn.esprit.examen.nomPrenomClasseExamen.jwt;
 
 import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.MalformedJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -11,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -23,7 +23,6 @@ import java.io.IOException;
 public class AuthTokenFilter extends OncePerRequestFilter {
 
     private static final Logger logger = LoggerFactory.getLogger(AuthTokenFilter.class);
-
     private final JwtUtils jwtUtils;
     private final SubscriberDetailsServiceImpl subDetailsService;
 
@@ -37,66 +36,74 @@ public class AuthTokenFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String requestURI = request.getRequestURI();
-        logger.info("📥 Requête interceptée : " + requestURI);
+        String method = request.getMethod();
+        logger.info("📥 Intercepting {} {}", method, requestURI);
 
-        // ✅ Autoriser les routes d'authentification sans filtre
-        if (requestURI.startsWith("/api/auth/")) {
-            logger.info("🔓 Accès autorisé sans authentification à : " + requestURI);
+        // ✅ Public routes (no authentication needed)
+        if (isPublicRoute(requestURI, method)) {
+            logger.info("🔓 Accès public autorisé : {} {}", method, requestURI);
             filterChain.doFilter(request, response);
             return;
         }
 
         try {
-            // ✅ Extraction du JWT
             String jwt = parseJwt(request);
+
             if (jwt == null) {
-                logger.warn("⚠️ Aucun token trouvé dans la requête !");
-            } else {
-                logger.info("🔍 Token extrait : " + jwt);
+                logger.warn("⛔ Aucun token JWT trouvé");
+                sendUnauthorizedError(response, "Authentication required");
+                return;
             }
 
-            // ✅ Validation et authentification
-            if (jwt != null && jwtUtils.validateJwtToken(jwt)) {
-                // Changer ici pour extraire l'email au lieu du username
-                String email = jwtUtils.getUserNameFromJwtToken(jwt); // Assurez-vous que cette méthode extrait bien l'email
-                logger.info("✅ Token valide pour l'utilisateur avec email : " + email);
-
-                // Charger les détails de l'utilisateur en utilisant l'email
-                UserDetails userDetails = subDetailsService.loadUserByUsername(email); // Utilisation de l'email au lieu du prénom
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities());
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-            } else {
-                logger.warn("⛔ Token invalide !");
+            if (!jwtUtils.validateJwtToken(jwt)) {
+                logger.warn("⛔ Token JWT invalide");
+                sendUnauthorizedError(response, "Invalid token");
+                return;
             }
 
-            // ✅ Continuer le filtre seulement si aucune erreur
-            filterChain.doFilter(request, response);
+            String email = jwtUtils.getUserNameFromJwtToken(jwt);
+            UserDetails userDetails = subDetailsService.loadUserByUsername(email);
+
+            UsernamePasswordAuthenticationToken authentication =
+                    new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            logger.info("🔐 Utilisateur authentifié : {}", email);
 
         } catch (ExpiredJwtException ex) {
-            logger.error("❌ Le token JWT a expiré : {}", ex.getMessage());
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Le token a expiré.");
-
-        } catch (MalformedJwtException ex) {
-            logger.error("❌ Token JWT mal formé : {}", ex.getMessage());
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Token invalide.");
-
-        } catch (Exception e) {
-            logger.error("❌ Erreur d'authentification : {}", e.getMessage());
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Erreur d'authentification.");
+            logger.error("⌛ Token expiré : {}", ex.getMessage());
+            sendUnauthorizedError(response, "Token expired");
+            return;
+        } catch (UsernameNotFoundException ex) {
+            logger.error("🔍 Utilisateur non trouvé : {}", ex.getMessage());
+            sendUnauthorizedError(response, "User not found");
+            return;
+        } catch (Exception ex) {
+            logger.error("❌ Erreur d'authentification : {}", ex.getMessage());
+            sendUnauthorizedError(response, "Authentication failed");
+            return;
         }
+
+        filterChain.doFilter(request, response);
     }
 
+    private boolean isPublicRoute(String uri, String method) {
+        return uri.startsWith("/api/auth/") ||
+                (uri.startsWith("/api/associations") && "POST".equalsIgnoreCase(method));
+    }
 
     private String parseJwt(HttpServletRequest request) {
         String headerAuth = request.getHeader("Authorization");
-
         if (StringUtils.hasText(headerAuth) && headerAuth.startsWith("Bearer ")) {
             return headerAuth.substring(7);
         }
-
         return null;
+    }
+
+    private void sendUnauthorizedError(HttpServletResponse response, String message) throws IOException {
+        response.setContentType("application/json");
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.getWriter().write("{ \"error\": \"" + message + "\" }");
     }
 }

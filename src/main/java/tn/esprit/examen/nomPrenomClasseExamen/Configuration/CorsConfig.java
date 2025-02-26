@@ -4,20 +4,16 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import java.util.Arrays;
-
 @Configuration
-public class
-CorsConfig implements WebMvcConfigurer {
+public class CorsConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
+        // Remplacer 'allowedOrigins("*")' par 'allowedOriginPatterns' pour permettre les credentials.
         registry.addMapping("/api/**")
-                .allowedOrigins("http://localhost:4200") // Remplacez ceci par l'URL de votre frontend
-                .allowedMethods("*") // Autorisez toutes les méthodes HTTP
-                .allowedHeaders("*") // Allow all headers
-
-                .allowCredentials(true); // Autorise les credentials (cookies, autorisation)
+                .allowedOrigins("http://localhost:4200") // ✅ Utilisation de allowedOriginPatterns pour spécifier les origines autorisées
+                .allowedMethods("*")
+                .allowedHeaders("*")
+                .allowCredentials(true);
     }
 }
-
