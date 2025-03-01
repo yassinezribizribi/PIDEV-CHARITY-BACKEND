@@ -1,4 +1,5 @@
 package tn.esprit.examen.nomPrenomClasseExamen.entities;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -16,6 +17,7 @@ import java.util.Set;
 @Entity
 public class Response implements Serializable {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idRespons;
     private Long idSender;
     private Long idReceiver;
@@ -23,7 +25,13 @@ public class Response implements Serializable {
     private String content;
     private String object;
 
-    @ManyToMany(mappedBy="responses", cascade = CascadeType.ALL)
+    @ManyToMany
+    @JsonIgnore
+    @JoinTable(
+            name = "response_request",
+            joinColumns = @JoinColumn(name = "response_id"),
+            inverseJoinColumns = @JoinColumn(name = "request_id")
+    )
     private Set<Request> requests;
 
 

@@ -1,5 +1,6 @@
 package tn.esprit.examen.nomPrenomClasseExamen.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -27,9 +28,11 @@ public class Request implements Serializable {
     private Boolean isUrgent;
 
     @ManyToMany(cascade = CascadeType.ALL)
+    @JsonIgnore
     private Set<Response> responses;
 
     @ManyToOne
+            @JsonIgnore
     Forum forum;
     public Request(Long idSender, Long idReceiver, Date dateRequest, String object, String content, Boolean isUrgent, Forum forum) {
         this.idSender = idSender;

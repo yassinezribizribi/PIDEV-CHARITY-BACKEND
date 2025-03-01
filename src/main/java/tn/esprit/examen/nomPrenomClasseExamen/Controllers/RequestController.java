@@ -12,6 +12,7 @@ import tn.esprit.examen.nomPrenomClasseExamen.services.RequestService;
 import java.util.List;
 
 @RestController
+@CrossOrigin(origins = "http://localhost:4200")
 @RequestMapping("/api/requests")
 @AllArgsConstructor
 public class RequestController {
@@ -19,7 +20,7 @@ public class RequestController {
     private final RequestService requestService;
     private static final Logger logger = LoggerFactory.getLogger(RequestController.class);
 
-    @GetMapping
+    @GetMapping("/all")
     public ResponseEntity<List<Request>> getAllRequests() {
         logger.info("📢 Récupération de toutes les demandes...");
         return ResponseEntity.ok(requestService.getAllRequests());
@@ -31,7 +32,7 @@ public class RequestController {
         return ResponseEntity.ok(requestService.getRequestById(id));
     }
 
-    @PostMapping
+    @PostMapping("/add")
     public ResponseEntity<?> createRequest(@RequestBody RequestDTO requestDTO) {
         try {
             logger.info("📝 Requête POST reçue pour créer une demande: {}", requestDTO);
@@ -43,7 +44,7 @@ public class RequestController {
         }
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/update/{id}")
     public ResponseEntity<?> updateRequest(@PathVariable Long id, @RequestBody RequestDTO requestDTO) {
         try {
             logger.info("🔄 Requête PUT reçue pour mettre à jour la demande avec ID: {}", id);
@@ -55,7 +56,7 @@ public class RequestController {
         }
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/delete/{id}")
     public ResponseEntity<Void> deleteRequest(@PathVariable Long id) {
         logger.info("🗑 Requête DELETE reçue pour supprimer la demande avec ID: {}", id);
         requestService.deleteRequest(id);

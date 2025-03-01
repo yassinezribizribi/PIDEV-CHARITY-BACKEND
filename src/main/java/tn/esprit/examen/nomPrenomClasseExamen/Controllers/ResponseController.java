@@ -11,6 +11,7 @@ import tn.esprit.examen.nomPrenomClasseExamen.services.IResponseServices;
 import java.util.List;
 
 @RestController
+@CrossOrigin(origins = "http://localhost:4200")
 @RequestMapping("/api/responses")
 @AllArgsConstructor
 public class ResponseController {
@@ -18,7 +19,7 @@ public class ResponseController {
     private final IResponseServices responseService;
     private static final Logger logger = LoggerFactory.getLogger(ResponseController.class);
 
-    @GetMapping
+    @GetMapping("/all")
     public ResponseEntity<List<ResponseDto>> getAllResponses() {
         return ResponseEntity.ok(responseService.getAllResponses());
     }
@@ -28,7 +29,7 @@ public class ResponseController {
         return ResponseEntity.ok(responseService.getResponseById(id));
     }
 
-    @PostMapping
+    @PostMapping("/add")
     public ResponseEntity<?> createResponse(@RequestBody ResponseDto responseDto) {
         try {
             logger.info("📝 Creating response: {}", responseDto);
@@ -40,7 +41,7 @@ public class ResponseController {
         }
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/update/{id}")
     public ResponseEntity<?> updateResponse(@PathVariable Long id, @RequestBody ResponseDto responseDto) {
         try {
             logger.info("🔄 Updating response with ID: {}", id);
@@ -52,10 +53,15 @@ public class ResponseController {
         }
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteResponse(@PathVariable Long id) {
-        logger.info("🗑 Deleting response with ID: {}", id);
-        responseService.deleteResponse(id);
-        return ResponseEntity.noContent().build();
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<?> deleteResponse(@PathVariable Long id) {
+        try {
+            logger.info("🗑 Deleting response with ID: {}", id);
+            responseService.deleteResponse(id);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            logger.error("❌ Error deleting response: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body("Error: " + e.getMessage());
+        }
     }
 }
