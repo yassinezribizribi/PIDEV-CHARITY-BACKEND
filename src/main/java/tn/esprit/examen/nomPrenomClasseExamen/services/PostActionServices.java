@@ -10,9 +10,7 @@ import tn.esprit.examen.nomPrenomClasseExamen.Repositories.PostActionRepository;
 import tn.esprit.examen.nomPrenomClasseExamen.Repositories.PostsRepository;
 import tn.esprit.examen.nomPrenomClasseExamen.Repositories.TestimonialRepository;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class PostActionServices implements IPostActionServices {
@@ -29,11 +27,6 @@ public class PostActionServices implements IPostActionServices {
     @Override
     public PostAction createPostActionAndAssignToPost(PostActionDTO postActionDTO) {
         PostAction postAction = new PostAction();
-
-        // Assurez-vous que l'ID n'est pas fourni
-        if (postActionDTO.getIdAction() != null) {
-            throw new IllegalArgumentException("L'ID du PostAction ne doit pas être fourni.");
-        }
 
         postAction.setTypeAction(postActionDTO.getTypeAction());
         postAction.setDateAction(new Date()); // Assigner la date actuelle
@@ -115,4 +108,21 @@ public class PostActionServices implements IPostActionServices {
 
 
  */
+
+
+    // Méthode simplifiée avec boucle for classique
+    @Override
+    public Map<Long, Long> getLikesCountByPost() {
+        List<Object[]> results = postActionRepository.countLikesByPost();
+        Map<Long, Long> likesCountMap = new HashMap<>();
+
+        for (Object[] result : results) {
+            Long idPosts = (Long) result[0];
+            Long likesCount = (Long) result[1];
+            likesCountMap.put(idPosts, likesCount);
+        }
+
+        return likesCountMap;
+    }
+
 }

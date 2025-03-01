@@ -29,6 +29,7 @@ public class JwtUtils {
 
         return Jwts.builder()
                 .setSubject(userPrincipal.getEmail())  // Utilisation de l'email comme sujet
+                .claim("iduser", userPrincipal.getId())
                 .claim("roles", userPrincipal.getAuthorities().stream()
                         .map(GrantedAuthority::getAuthority)
                         .collect(Collectors.toList())
@@ -46,6 +47,14 @@ public class JwtUtils {
                 .parseClaimsJws(token)
                 .getBody()
                 .getSubject();
+    }
+
+    public Long getUserIdFromJwtToken(String token) {
+        return Jwts.parserBuilder().setSigningKey(Keys.hmacShaKeyFor(jwtSecret.getBytes()))
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .get("iduser", Long.class); 
     }
 
     public boolean validateJwtToken(String authToken) {

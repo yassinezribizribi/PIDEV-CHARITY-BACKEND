@@ -23,8 +23,7 @@ public class Posts implements Serializable{
     private Long idPosts;
     private String content;
     private Date creationDate;
-    private int likesCount;
-    private int shareCount;
+
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy="posts")
     @JsonIgnore

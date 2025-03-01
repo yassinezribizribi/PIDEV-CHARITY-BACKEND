@@ -18,8 +18,6 @@ public class PostsDTO {
     private Long idPosts;
     private String content;
     private Date creationDate;
-    private int likesCount;
-    private int shareCount;
     private Set<PostAction> postActions;
     private Subscription subscription;
 }

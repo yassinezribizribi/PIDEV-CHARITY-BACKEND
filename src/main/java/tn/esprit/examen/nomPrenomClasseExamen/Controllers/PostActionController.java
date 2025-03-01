@@ -8,6 +8,7 @@ import tn.esprit.examen.nomPrenomClasseExamen.entities.PostAction;
 import tn.esprit.examen.nomPrenomClasseExamen.services.IPostActionServices;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -61,4 +62,12 @@ public class PostActionController {
 
 
  */
+
+    // Endpoint pour récupérer le nombre de likes par post
+    @GetMapping("/likes-count")
+    public ResponseEntity<Map<Long, Long>> getLikesCountByPost() {
+        Map<Long, Long> likesCount = postActionServices.getLikesCountByPost();
+        return ResponseEntity.ok(likesCount);
+    }
+
 }

@@ -19,4 +19,5 @@ public interface IAnimalServices {
 
     // Méthode pour récupérer les animaux associés à un Subscriber via l'ID User
     List<Animal> getAnimalsBySubscriber(Long userId);
+    List<Animal> getNonAdoptedAnimals();
 }

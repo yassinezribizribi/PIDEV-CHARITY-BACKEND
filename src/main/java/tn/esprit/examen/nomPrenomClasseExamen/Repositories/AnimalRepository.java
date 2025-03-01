@@ -7,5 +7,5 @@ import java.util.List;
 
 public interface AnimalRepository extends JpaRepository<Animal, Long> {
     List<Animal> findBySubscriber_IdUser(Long userId);
-
+    List<Animal> findByIsAdoptedFalse();
 }

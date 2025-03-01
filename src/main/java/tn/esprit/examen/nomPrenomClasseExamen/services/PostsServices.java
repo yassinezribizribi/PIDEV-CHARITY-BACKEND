@@ -19,19 +19,12 @@ public class PostsServices implements IPostsServives{
     @Autowired
     private SubscriptionRepository subscriptionRepository;
 
-    @Override
+   @Override
     public Posts createPostsAndAssignToAssociation(PostsDTO postsDTO) {
         Posts posts = new Posts();
 
-        // Vérification que l'ID du post n'est pas défini si @GeneratedValue est utilisé
-        if (postsDTO.getIdPosts() != null) {
-            throw new IllegalArgumentException("L'ID du post ne doit pas être fourni.");
-        }
-
         posts.setContent(postsDTO.getContent());
         posts.setCreationDate(postsDTO.getCreationDate());
-        posts.setLikesCount(postsDTO.getLikesCount());
-        posts.setShareCount(postsDTO.getShareCount());
         posts.setPostActions(postsDTO.getPostActions());
 
         // Vérification et assignation au bon abonnement (Subscription)
@@ -55,8 +48,6 @@ public class PostsServices implements IPostsServives{
                 .map(existingPosts -> {
                     existingPosts.setContent(updatedPosts.getContent());
                     existingPosts.setCreationDate(updatedPosts.getCreationDate());
-                    existingPosts.setLikesCount(updatedPosts.getLikesCount());
-                    existingPosts.setShareCount(updatedPosts.getShareCount());
                     existingPosts.setPostActions(updatedPosts.getPostActions());
                     existingPosts.setSubscription(updatedPosts.getSubscription());
                     return postsRepository.save(existingPosts);

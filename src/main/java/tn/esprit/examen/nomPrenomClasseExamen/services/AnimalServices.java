@@ -39,10 +39,9 @@ public class AnimalServices implements IAnimalServices {
         animal.setHealthcare(animalDTO.getHealthcare());
 
         // Récupérer le Subscriber via son idUser
-        Subscriber subscriber = subscriberRepository.findById(animalDTO.getSubscriber().getIdUser())
-                .orElseThrow(() -> new IllegalArgumentException("Subscriber (User) non trouvé avec l'ID : " + animalDTO.getSubscriber().getIdUser()));
-        animal.setSubscriber(subscriber);
-
+        //        Subscriber subscriber = subscriberRepository.findById(animalDTO.getSubscriber().getIdUser())
+        //              .orElseThrow(() -> new IllegalArgumentException("Subscriber (User) non trouvé avec l'ID : " + animalDTO.getSubscriber().getIdUser()));
+        //    animal.setSubscriber(subscriber);
         return animalRepository.save(animal);
     }
 
@@ -84,4 +83,11 @@ public class AnimalServices implements IAnimalServices {
     public List<Animal> getAnimalsBySubscriber(Long userId) {
         return animalRepository.findBySubscriber_IdUser(userId);
     }
+
+    @Override
+    public List<Animal> getNonAdoptedAnimals() {
+        return animalRepository.findByIsAdoptedFalse();
+    }
+
+
 }

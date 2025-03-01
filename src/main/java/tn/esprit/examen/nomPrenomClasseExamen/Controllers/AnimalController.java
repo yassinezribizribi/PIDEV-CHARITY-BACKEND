@@ -76,4 +76,9 @@ public class AnimalController {
         }
         return ResponseEntity.ok(animals);
     }
+
+    @GetMapping("/non-adopted")
+    public List<Animal> getNonAdoptedAnimals() {
+        return animalService.getNonAdoptedAnimals();
+    }
 }
