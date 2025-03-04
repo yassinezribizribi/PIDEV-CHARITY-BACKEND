@@ -6,6 +6,7 @@ import lombok.experimental.FieldDefaults;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Level;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Type;
 
+import java.time.LocalDate;
 import java.util.Date;
 
 @Getter
@@ -41,5 +42,5 @@ public class TrainingDTO {
 
     @NotNull(message = "The session date is required.")
     @Future(message = "The session date must be in the future.")
-    private Date sessionDate;
+    private LocalDate sessionDate;
 }

@@ -1,7 +1,9 @@
 package tn.esprit.examen.nomPrenomClasseExamen.Repositories;
 
+import jakarta.transaction.Transactional;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -25,4 +27,9 @@ public interface SubscriberRepository extends JpaRepository<Subscriber, Long> {
 
     @Query("SELECT s FROM Subscriber s WHERE s.idUser != :idUser")
     List<Subscriber> findAllExceptUser(@Param("idUser")  Long idUser);
+
+    @Transactional
+    @Modifying
+    @Query("UPDATE EventSubscriber s SET s.isAffected = CASE WHEN s.isAffected = TRUE THEN FALSE ELSE TRUE END WHERE s.subscriber.idUser = :userId AND s.event.idEvent = :eventId")
+    void toggleSubscriberAffectation(@Param("userId") Long userId, @Param("eventId") Long eventId);
 }

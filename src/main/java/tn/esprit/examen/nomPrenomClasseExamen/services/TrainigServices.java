@@ -11,9 +11,7 @@ import tn.esprit.examen.nomPrenomClasseExamen.entities.Role;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Subscriber;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Training;
 
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -88,46 +86,38 @@ public class TrainigServices implements ITrainingServices {
     }
 
     // Ajouter un abonné à une formation
-    public Training addSubscriberToTraining(@Valid Long trainingId, Long userId) {
-        if (userId == null) {
-            throw new IllegalArgumentException("L'ID de l'utilisateur ne peut pas être nul.");
+    public Training addSubscriberToTraining(Long trainingId, Long subscriberId) {
+        if (subscriberId == null || subscriberId == null) {
+            throw new IllegalArgumentException("Les IDs du mentor et de l'abonné ne peuvent pas être nuls.");
         }
 
-        // Trouver la formation
+        // Récupérer la formation
         Training training = trainingRepository.findById(trainingId)
                 .orElseThrow(() -> new NoSuchElementException("Formation non trouvée avec l'ID: " + trainingId));
 
-        // Trouver l'utilisateur (bénévole ou mentor)
-        Subscriber mentor = subscriberRepository.findById(userId)
-                .orElseThrow(() -> new NoSuchElementException("Utilisateur non trouvé avec l'ID: " + userId));
+        // Vérifier que le mentor existe et qu'il a bien le rôle de MENTOR
+        Subscriber mentor = subscriberRepository.findById(subscriberId)
+                .orElseThrow(() -> new NoSuchElementException("Mentor non trouvé avec l'ID: " + subscriberId));
 
-        // Vérifier si l'utilisateur est un mentor
-        if (mentor.getRole() != Role.MENTOR) {
-            throw new IllegalArgumentException("Seuls les mentors peuvent inscrire des réfugiés à une formation.");
+
+
+        // Récupérer l'abonné
+        Subscriber subscriber = subscriberRepository.findById(subscriberId)
+                .orElseThrow(() -> new NoSuchElementException("Utilisateur non trouvé avec l'ID: " + subscriberId));
+
+        // Ajouter l'abonné à la formation sans écraser les anciens
+        Set<Subscriber> subscriberSet = training.getSubscribers();
+        if (subscriberSet == null) {
+            subscriberSet = new HashSet<>();
         }
 
-        // Trouver un réfugié à inscrire
-        Optional<Subscriber> optionalRefugee = subscriberRepository.findByRole(Role.REFUGEE).stream().findFirst();
-
-        if (optionalRefugee.isEmpty()) {
-            throw new IllegalArgumentException("Aucun réfugié disponible pour inscription.");
+        if (!subscriberSet.contains(subscriber)) {
+            subscriberSet.add(subscriber);
+            training.setSubscribers(subscriberSet);
+            return trainingRepository.save(training);
+        } else {
+            throw new IllegalArgumentException("L'abonné est déjà inscrit à cette formation.");
         }
-
-        Subscriber refugee = optionalRefugee.get();
-
-        // Vérifier si le réfugié est déjà inscrit
-        if (training.getSubscribers().contains(refugee)) {
-            throw new IllegalArgumentException("Le réfugié est déjà inscrit à cette formation.");
-        }
-
-        // Ajouter le réfugié à la formation
-        training.getSubscribers().add(refugee);
-        log.info("✅ Le mentor {} a inscrit le réfugié {} à la formation {}",
-                mentor.getFirstName() + " " + mentor.getLastName(),
-                refugee.getFirstName() + " " + refugee.getLastName(),
-                training.getTrainingName());
-
-        return trainingRepository.save(training);
     }
 
 }

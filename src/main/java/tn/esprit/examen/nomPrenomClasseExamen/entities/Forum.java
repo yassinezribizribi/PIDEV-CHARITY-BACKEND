@@ -19,6 +19,7 @@ import java.util.Set;
 
 public class Forum implements Serializable {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idForum;
     private Date dateCreation;
 

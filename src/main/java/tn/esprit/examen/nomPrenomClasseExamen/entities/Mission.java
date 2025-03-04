@@ -17,6 +17,7 @@ import java.util.Set;
 
 public class Mission implements Serializable{
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idMission;
     private String description;
     private String location;

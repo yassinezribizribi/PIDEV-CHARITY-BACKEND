@@ -17,6 +17,7 @@ import java.util.Set;
 @Entity
 public class Healthcare implements Serializable {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idHealthcare;
     private String history;
     private String treatmentPlan;

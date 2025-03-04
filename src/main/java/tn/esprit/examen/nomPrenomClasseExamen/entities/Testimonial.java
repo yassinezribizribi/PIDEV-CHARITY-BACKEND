@@ -16,6 +16,7 @@ import java.util.Set;
 @Entity
 public class Testimonial implements Serializable {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idTestimonial;
     private String content;
     private String beforePhoto ;

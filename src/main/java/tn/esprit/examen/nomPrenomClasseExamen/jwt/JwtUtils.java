@@ -11,6 +11,8 @@ import org.springframework.stereotype.Component;
 import tn.esprit.examen.nomPrenomClasseExamen.services.SubDetailsImpl;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Component
@@ -21,22 +23,26 @@ public class JwtUtils {
     private String jwtSecret;
 
     @Value("${bezkoder.app.jwtExpirationMs}")
-    private int jwtExpirationMs;
+    private long jwtExpirationMs;
 
     public String generateJwtToken(Authentication authentication) {
         SubDetailsImpl userPrincipal = (SubDetailsImpl) authentication.getPrincipal();
         logger.debug("🔑 Génération du JWT pour l'utilisateur : {}", userPrincipal.getEmail());
 
+        // Create claims with `idUser`
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("idUser", userPrincipal.getId()); // ✅ Ensure `idUser` is included
+        claims.put("roles", userPrincipal.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList())
+        );
+
         return Jwts.builder()
-                .setSubject(userPrincipal.getEmail())  // Utilisation de l'email comme sujet
-                .claim("roles", userPrincipal.getAuthorities().stream()
-                        .map(GrantedAuthority::getAuthority)
-                        .collect(Collectors.toList())
-                )
+                .setClaims(claims) // ✅ Use the claims map
+                .setSubject(userPrincipal.getEmail())  // Email as subject
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
-                .setId(String.valueOf(userPrincipal.getId()))
-                .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes()), SignatureAlgorithm.HS256) // Encodage de la clé
+                .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes()), SignatureAlgorithm.HS256)
                 .compact();
     }
 
@@ -46,6 +52,14 @@ public class JwtUtils {
                 .parseClaimsJws(token)
                 .getBody()
                 .getSubject();
+    }
+
+    public Long getUserIdFromJwtToken(String token) {
+        return Jwts.parserBuilder().setSigningKey(Keys.hmacShaKeyFor(jwtSecret.getBytes()))
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .get("iduser", Long.class); 
     }
 
     public boolean validateJwtToken(String authToken) {

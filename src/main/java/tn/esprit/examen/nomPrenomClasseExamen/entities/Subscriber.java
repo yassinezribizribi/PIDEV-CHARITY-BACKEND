@@ -30,7 +30,8 @@ public class Subscriber extends User { // Inherits from User
     @ManyToOne
     private Healthcare healthcare;
 
-    @OneToMany(cascade = CascadeType.PERSIST) // Cascade only persist and merge
+    @OneToMany(mappedBy = "subscriber" , cascade = CascadeType.PERSIST) // Cascade only persist and merge
+    @JsonIgnore
     private Set<Animal> animals;
 
     @ManyToMany(mappedBy = "subscribers", cascade = CascadeType.PERSIST)
@@ -39,7 +40,9 @@ public class Subscriber extends User { // Inherits from User
     @ManyToMany(mappedBy = "subscribers", cascade = CascadeType.PERSIST)
     @JsonIgnore
     private Set<Training> trainings;
-
+    @ManyToMany
+    @JsonIgnore
+    private Set<Event> events;
     @ManyToMany(mappedBy = "subscribers", cascade = CascadeType.PERSIST)
     private Set<Forum> forums;
 

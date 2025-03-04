@@ -17,11 +17,12 @@ import java.util.Set;
 @Entity
 public class Subscription implements Serializable {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idSubscription;
     private Date subscriptionDate;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy="subscription")
-    private Set<Posts> Postss;
+    private Set<Posts> Posts;
 
     @ManyToMany(mappedBy="subscriptions", cascade = CascadeType.ALL)
     private Set<Association> associations;

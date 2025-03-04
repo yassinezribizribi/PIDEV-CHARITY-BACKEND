@@ -18,7 +18,8 @@ import java.util.Optional;
 @CrossOrigin(origins = "http://localhost:4200")
 @RestController
 @RequestMapping("/api/trainings")
-public class TrainingController {
+public class
+TrainingController {
 
     @Autowired
     private ITrainingServices trainingServices;
@@ -87,5 +88,5 @@ public class TrainingController {
         Training training = trainingServices.addSubscriberToTraining(trainingId, userId);
         return ResponseEntity.ok(training); // Retourne le training mis à jour
     }
-    }
+}
 
