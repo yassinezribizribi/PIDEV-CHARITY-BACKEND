@@ -2,6 +2,7 @@ package tn.esprit.examen.nomPrenomClasseExamen.jwt;
 
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.SignatureException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -37,11 +38,11 @@ public class AuthTokenFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String requestURI = request.getRequestURI();
-        logger.info("📥 Requête interceptée : " + requestURI);
+        logger.info("📥 Requête interceptée : {}", requestURI);
 
-        // ✅ Autoriser les routes d'authentification sans filtre
+        // ✅ Autoriser les routes d'authentification sans filtrage JWT
         if (requestURI.startsWith("/api/auth/")) {
-            logger.info("🔓 Accès autorisé sans authentification à : " + requestURI);
+            logger.info("🔓 Accès autorisé sans authentification à : {}", requestURI);
             filterChain.doFilter(request, response);
             return;
         }
@@ -50,51 +51,73 @@ public class AuthTokenFilter extends OncePerRequestFilter {
             // ✅ Extraction du JWT
             String jwt = parseJwt(request);
             if (jwt == null) {
-                logger.warn("⚠️ Aucun token trouvé dans la requête !");
-            } else {
-                logger.info("🔍 Token extrait : " + jwt);
+                logger.warn("⚠️ Aucun token JWT trouvé dans la requête !");
+                filterChain.doFilter(request, response);
+                return;
             }
 
-            // ✅ Validation et authentification
-            if (jwt != null && jwtUtils.validateJwtToken(jwt)) {
-                // Changer ici pour extraire l'email au lieu du username
-                String email = jwtUtils.getUserNameFromJwtToken(jwt); // Assurez-vous que cette méthode extrait bien l'email
-                logger.info("✅ Token valide pour l'utilisateur avec email : " + email);
+            logger.info("🔍 Token extrait : {}", jwt);
 
-                // Charger les détails de l'utilisateur en utilisant l'email
-                UserDetails userDetails = subDetailsService.loadUserByUsername(email);
-                // Utilisation de l'email au lieu du prénom
-                logger.info("******");
+            // ✅ Validation du token
+            if (jwtUtils.validateJwtToken(jwt)) {
+                // ✅ Extraction de l'identifiant utilisateur
+                String userIdentifier = jwtUtils.getUserNameFromJwtToken(jwt);
+                logger.info("✅ Token valide pour l'utilisateur : {}", userIdentifier);
 
-                logger.info(userDetails.getAuthorities().toString());
+                if (userIdentifier == null || userIdentifier.trim().isEmpty() || userIdentifier.equals("0")) {
+                    logger.error("❌ Le JWT ne contient pas d'identifiant utilisateur valide !");
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token invalide.");
+                    return;
+                }
 
+                // ✅ Charger les détails de l'utilisateur via l'identifiant
+                UserDetails userDetails = subDetailsService.loadUserByUsername(userIdentifier);
+
+                if (userDetails == null) {
+                    logger.error("❌ Utilisateur non trouvé pour l'identifiant : {}", userIdentifier);
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Utilisateur non trouvé.");
+                    return;
+                }
+
+                logger.info("✅ Utilisateur authentifié avec succès : {}", userDetails.getUsername());
+
+                // ✅ Créer une authentification et mettre à jour le contexte de sécurité
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        userDetails, jwt, userDetails.getAuthorities());
+                        userDetails, null, userDetails.getAuthorities());
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             } else {
                 logger.warn("⛔ Token invalide !");
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token invalide.");
+                return;
             }
-
-            // ✅ Continuer le filtre seulement si aucune erreur
-            filterChain.doFilter(request, response);
 
         } catch (ExpiredJwtException ex) {
             logger.error("❌ Le token JWT a expiré : {}", ex.getMessage());
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Le token a expiré.");
-
+            return;
         } catch (MalformedJwtException ex) {
             logger.error("❌ Token JWT mal formé : {}", ex.getMessage());
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Token invalide.");
-
+            return;
+        } catch (SignatureException ex) {
+            logger.error("❌ Signature du JWT invalide : {}", ex.getMessage());
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Signature du token invalide.");
+            return;
         } catch (Exception e) {
             logger.error("❌ Erreur d'authentification : {}", e.getMessage());
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Erreur d'authentification.");
+            return;
         }
+
+        // ✅ Continuer le filtrage
+        filterChain.doFilter(request, response);
     }
 
-
+    /**
+     * ✅ Extraire le JWT de l'en-tête Authorization
+     */
     private String parseJwt(HttpServletRequest request) {
         String headerAuth = request.getHeader("Authorization");
 

@@ -28,14 +28,14 @@ public class JwtUtils {
         logger.debug("🔑 Génération du JWT pour l'utilisateur : {}", userPrincipal.getEmail());
 
         return Jwts.builder()
-                .setSubject(userPrincipal.getEmail())  // Utilisation de l'email comme sujet
+                .setSubject(userPrincipal.getEmail())  // Email comme sujet
+                .claim("iduser", userPrincipal.getId()) // Ajout de l'ID utilisateur
                 .claim("roles", userPrincipal.getAuthorities().stream()
                         .map(GrantedAuthority::getAuthority)
                         .collect(Collectors.toList())
                 )
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
-                .setId(String.valueOf(userPrincipal.getId()))
                 .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes()), SignatureAlgorithm.HS256) // Encodage de la clé
                 .compact();
     }
@@ -46,6 +46,14 @@ public class JwtUtils {
                 .parseClaimsJws(token)
                 .getBody()
                 .getSubject();
+    }
+
+    public Long getUserIdFromJwtToken(String token) {
+        return Jwts.parserBuilder().setSigningKey(Keys.hmacShaKeyFor(jwtSecret.getBytes()))
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .get("iduser", Long.class); // Récupération de l'ID utilisateur
     }
 
     public boolean validateJwtToken(String authToken) {

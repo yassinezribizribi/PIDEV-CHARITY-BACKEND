@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import tn.esprit.examen.nomPrenomClasseExamen.dto.HealthcareDTO;
+import tn.esprit.examen.nomPrenomClasseExamen.dto.NotificationDTO;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Healthcare;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.HealthcareStatus;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Subscriber;
@@ -24,6 +25,8 @@ public class HealthcareServices implements IHealthcareServices {
 
     @Autowired
     private SubscriberRepository subscriberRepository;
+    @Autowired
+    private NotificationService notificationService;
 
     // ✅ Ajouter un soin
     @Transactional
@@ -43,17 +46,30 @@ public class HealthcareServices implements IHealthcareServices {
     }
 
     // ✅ Modifier un soin
+
     @Transactional
-    @Override
     public Healthcare updateHealthcare(Long id, HealthcareDTO healthcareDTO) {
         Healthcare healthcare = healthcareRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("❌ Traitement non trouvé !"));
 
         healthcare.setHistory(healthcareDTO.getHistory());
-        healthcare.setBookingDate(healthcareDTO.getBookingDate()); // ✅ BookingDate est déjà un Date
+        healthcare.setBookingDate(healthcareDTO.getBookingDate());
 
-        return healthcareRepository.save(healthcare);
+        // ✅ Conversion String -> Enum
+        healthcare.setStatus(HealthcareStatus.valueOf(healthcareDTO.getStatus().toUpperCase()));
 
+        Healthcare updatedHealthcare = healthcareRepository.save(healthcare);
+
+        // ✅ Envoi de notification après mise à jour
+        NotificationDTO notificationDTO = new NotificationDTO();
+        notificationDTO.setSubscriberId(healthcare.getSubscriber().getIdUser());
+        notificationDTO.setMessage("📢 Votre rendez-vous a été mis à jour : "
+                + "Nouvelle date : " + healthcareDTO.getBookingDate()
+                + ", Statut : " + healthcareDTO.getStatus());
+
+        notificationService.addNotification(notificationDTO);
+
+        return updatedHealthcare;
     }
 
     // ✅ Modifier uniquement le statut et la date

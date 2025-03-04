@@ -19,22 +19,23 @@ import java.util.Set;
 public class Subscriber extends User {
 
     @Enumerated(EnumType.STRING)
-    private Role role;
+    private Role role;  // Peut être REFUGEE, ASSOCIATION_MEMBER, VOLUNTEER (Médecin)
 
-    private String skills;
-    private String nationality;
-    private String expertiseArea;
-    private String associationRole;
-    private String symptoms;
+    private String skills;        // Compétences (pour VOLUNTEER)
+    private String nationality;   // Pour REFUGEE
+    private String expertiseArea; // Pour MENTOR
+    private String associationRole; // Pour ASSOCIATION_MEMBER
+
+    private String symptoms;  // ✅ Symptômes décrits par le patient lors de la demande de soin
 
     @Column(nullable = false)
-    private boolean healthcareRequest = false;
+    private boolean healthcareRequest = false;  // ✅ Indique si ce patient a fait une demande de soin
 
-    @JsonIgnore
+    @JsonIgnore// ✅ Un patient peut avoir plusieurs soins
     @OneToMany(mappedBy = "subscriber", cascade = CascadeType.ALL)
     private List<Healthcare> healthcareRequests;
 
-    @JsonIgnore
+    @JsonIgnore// ✅ Un médecin (VOLUNTEER) peut traiter plusieurs patients
     @OneToMany(mappedBy = "doctor", cascade = CascadeType.ALL)
     private List<Healthcare> treatedPatients;
 
@@ -54,10 +55,7 @@ public class Subscriber extends User {
     private Set<Forum> forums;
 
     @OneToMany(mappedBy = "subscriber")
-    private List<Crisis> crises;
-
-    @Column(name = "id_user")
+    private List<Crisis> crises; // ✅ Liste des crises signalées par ce subscriber
+    @Column(name = "id_user") // ✅ Correspondance exacte avec la BDD
     private Long idUser;
 }
-
-

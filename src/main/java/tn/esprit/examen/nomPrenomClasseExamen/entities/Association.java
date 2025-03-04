@@ -4,6 +4,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.Set;
 
 @Getter
@@ -15,6 +16,7 @@ import java.util.Set;
 @Entity
 public class Association implements Serializable {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idAssociation;
     private String associationName;
     private String description;
@@ -29,13 +31,6 @@ public class Association implements Serializable {
     @OneToMany(cascade = CascadeType.ALL, mappedBy="association")
     private Set<Event> events;
 
-    @OneToMany(cascade = CascadeType.ALL, mappedBy="association")
-    private Set<Notification> notifications;
-
-
-
-
-
-
-
+    @OneToMany(mappedBy = "association", cascade = CascadeType.ALL) // ✅ Correction ici
+    private List<Notification> notifications;
 }

@@ -14,8 +14,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.AuthenticationEntryPoint;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -24,6 +22,7 @@ import tn.esprit.examen.nomPrenomClasseExamen.jwt.CustomAccessDeniedHandler;
 import tn.esprit.examen.nomPrenomClasseExamen.services.SubscriberDetailsServiceImpl;
 
 import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -39,12 +38,19 @@ public class WebSecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Active CORS
-                .csrf(csrf -> csrf.disable()) // Désactive CSRF
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Pas de session
+                .csrf(csrf -> csrf.disable()) // Désactive CSRF pour éviter les problèmes avec Angular
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // JWT = Stateless
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll() // Auth autorisé
-                         // ⚠️ Attention, tout ouvert
-                        .anyRequest().authenticated() // Le reste nécessite une auth
+                        .requestMatchers("/api/auth/**").permitAll() // Auth autorisé sans JWT
+                        .requestMatchers("/api/users/forgot-password", "/api/users/reset-password").permitAll() // ✅ Accessible sans authentification
+                        .requestMatchers("/api/testimonials/**").authenticated()
+                        .requestMatchers("/api/healthcare/notifications/**").authenticated()// ✅ Protégé mais accessible avec JWT
+
+
+
+                        .requestMatchers("/api/healthcare/all").authenticated() // ✅ Exige un JWT pour healthcare
+                        .requestMatchers("/api/healthcare/**").authenticated() // ✅ Sécurisé
+                        .anyRequest().authenticated() // Le reste nécessite une authentification
                 )
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint((request, response, authException) -> {
@@ -69,13 +75,14 @@ public class WebSecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000")); // Autoriser le front
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Cache-Control", "Content-Type"));
+        configuration.setAllowedOrigins(List.of("http://localhost:4200")); // Angular Frontend
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("Authorization", "Cache-Control", "Content-Type"));
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
+
 }

@@ -4,24 +4,30 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.io.Serializable;
 import java.util.Date;
 
+@Entity
 @Getter
 @Setter
-@ToString
 @AllArgsConstructor
 @NoArgsConstructor
-@FieldDefaults(level= AccessLevel.PRIVATE)
-@Entity
-public class Notification implements Serializable {
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class Notification {
+
     @Id
-    private Long idNotification;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
     private String message;
-    private Date dateTime;
+
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date createdAt = new Date();
+
     @ManyToOne
-    private Association association;
+    @JoinColumn(name = "association_id", nullable = false)
+    private Association association;  // ✅ Assurer la correspondance avec Association
 
-
-
+    @ManyToOne
+    @JoinColumn(name = "subscriber_id", nullable = false)
+    private Subscriber subscriber;
 }

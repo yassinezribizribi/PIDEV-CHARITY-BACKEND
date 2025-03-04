@@ -21,45 +21,58 @@ public class HealthcareController {
     @Autowired
     private IHealthcareServices healthcareService;
 
-    // 🔹 Ajouter un Healthcare
+    // ✅ Ajouter un soin
     @PostMapping("/add")
     public ResponseEntity<Healthcare> createHealthcare(@RequestBody HealthcareDTO healthcareDTO) {
-        Healthcare healthcare = healthcareService.addHealthcare(healthcareDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body(healthcare);
+        try {
+            Healthcare healthcare = healthcareService.addHealthcare(healthcareDTO);
+            return ResponseEntity.status(HttpStatus.CREATED).body(healthcare);
+        } catch (Exception e) {
+            log.error("❌ Erreur lors de l'ajout du soin : {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
     }
 
-    // 🔹 Modifier un Healthcare
+    // ✅ Modifier un soin
     @PutMapping("/{id}")
     public ResponseEntity<Healthcare> updateHealthcare(@PathVariable Long id, @RequestBody HealthcareDTO healthcareDTO) {
         try {
             Healthcare updatedHealthcare = healthcareService.updateHealthcare(id, healthcareDTO);
             return ResponseEntity.ok(updatedHealthcare);
         } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
+            log.error("❌ Erreur lors de la mise à jour du soin ID {} : {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
 
-    // 🔹 Supprimer un Healthcare
+    // ✅ Modifier uniquement le statut et la date
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<Healthcare> updateHealthcareStatus(@PathVariable Long id, @RequestBody HealthcareDTO healthcareDTO) {
+        try {
+            Healthcare updatedHealthcare = healthcareService.updateHealthcareStatus(id, healthcareDTO.getStatus(), healthcareDTO.getBookingDate());
+            return ResponseEntity.ok(updatedHealthcare);
+        } catch (RuntimeException e) {
+            log.error("❌ Erreur lors de la mise à jour du statut du soin ID {} : {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+    }
+
+    // ✅ Supprimer un soin
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteHealthcare(@PathVariable Long id) {
         try {
             healthcareService.deleteHealthcare(id);
             return ResponseEntity.noContent().build();
         } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
+            log.error("❌ Erreur lors de la suppression du soin ID {} : {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
 
-    // 🔹 Obtenir un Healthcare par ID
-    @GetMapping("/{id}")
-    public ResponseEntity<Healthcare> getHealthcareById(@PathVariable Long id) {
-        Optional<Healthcare> healthcare = healthcareService.getHealthcareById(id);
-        return healthcare.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
-    }
-
-    // 🔹 Obtenir tous les Healthcare
-    @GetMapping
+    // ✅ Récupérer tous les soins
+    @GetMapping("/all")
     public ResponseEntity<List<Healthcare>> getAllHealthcare() {
-        return ResponseEntity.ok(healthcareService.getAllHealthcare());
+        List<Healthcare> healthcareList = healthcareService.getAllHealthcare();
+        return ResponseEntity.ok(healthcareList);
     }
 }

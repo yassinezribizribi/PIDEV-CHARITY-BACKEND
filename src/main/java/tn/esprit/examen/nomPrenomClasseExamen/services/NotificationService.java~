@@ -1,0 +1,40 @@
+package tn.esprit.examen.nomPrenomClasseExamen.services;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import tn.esprit.examen.nomPrenomClasseExamen.Repositories.NotificationRepository;
+import tn.esprit.examen.nomPrenomClasseExamen.Repositories.SubscriberRepository;
+import tn.esprit.examen.nomPrenomClasseExamen.dto.NotificationDTO;
+import tn.esprit.examen.nomPrenomClasseExamen.entities.Notification;
+import tn.esprit.examen.nomPrenomClasseExamen.entities.Subscriber;
+
+import java.util.Date;
+import java.util.List;
+
+@Service
+public class NotificationService {
+
+    @Autowired
+    private NotificationRepository notificationRepository;
+
+    @Autowired
+    private SubscriberRepository subscriberRepository;
+
+    // ✅ Ajouter une notification
+    public Notification addNotification(NotificationDTO notificationDTO) {
+        Subscriber subscriber = subscriberRepository.findById(notificationDTO.getSubscriberId())
+                .orElseThrow(() -> new RuntimeException("❌ Patient non trouvé !"));
+
+        Notification notification = new Notification();
+        notification.setMessage(notificationDTO.getMessage());
+        notification.setCreatedAt(new Date());
+        notification.setSubscriber(subscriber);
+
+        return notificationRepository.save(notification);
+    }
+
+    // ✅ Récupérer les notifications d'un patient
+    public List<Notification> getNotificationsBySubscriber(Long subscriberId) {
+        return notificationRepository.findBySubscriber_IdUser(subscriberId);
+    }
+}

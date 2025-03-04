@@ -24,8 +24,7 @@ public class User implements Serializable {
 
     @Column(unique = true, nullable = false)
     private String email;
-    @Column(name = "reset_token")
-    private String resetToken;
+
     private String password;
     private String telephone;
     private Boolean isBanned;
