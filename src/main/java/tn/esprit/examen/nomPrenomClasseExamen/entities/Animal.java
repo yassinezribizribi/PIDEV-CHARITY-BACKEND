@@ -23,13 +23,11 @@ public class Animal implements Serializable {
     private String race ;
     private String medicalHistory;
     private Boolean isAdopted;
-
     @OneToOne
     private Healthcare healthcare;
 
     @ManyToOne
     @JoinColumn(name = "id_user")
-    @JsonIgnore
     private Subscriber subscriber;
 
 }

@@ -1,11 +1,13 @@
 package tn.esprit.examen.nomPrenomClasseExamen.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.io.Serializable;
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.Set;
 
@@ -46,8 +48,9 @@ public class Training implements Serializable {
 
     @NotNull(message = "The session date is mandatory.")
     @Future(message = "The session date must be a future date.")
-    private Date sessionDate;
+    private LocalDate sessionDate;
 
     @ManyToMany(cascade = CascadeType.ALL)
+
     private Set<Subscriber> subscribers;
 }

@@ -22,10 +22,11 @@ public class AnimalController {
     private IAnimalServices animalService;
 
     // Créer un animal
-    @PostMapping("/add")
-    public ResponseEntity<Animal> createAnimal(@RequestBody AnimalDTO animalDTO) {
+    @PostMapping("/add/{iduser}")
+    public ResponseEntity<Animal> createAnimal(@RequestBody AnimalDTO animalDTO,@PathVariable Long iduser) {
         try {
-            Animal animal = animalService.addAnimal(animalDTO);
+            Animal animal = animalService.addAnimal(animalDTO,iduser);
+            System.out.println(iduser);
             return ResponseEntity.status(HttpStatus.CREATED).body(animal);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(null);
@@ -56,9 +57,10 @@ public class AnimalController {
 
     // Obtenir un animal par ID
     @GetMapping("/getAnimalById/{id}")
-    public ResponseEntity<Animal> getAnimalById(@PathVariable Long id) {
+    public ResponseEntity<AnimalDTO> getAnimalById(@PathVariable Long id) {
         Optional<Animal> animal = animalService.getAnimalById(id);
-        return animal.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        return animal.map(a -> ResponseEntity.ok(new AnimalDTO(a))) // Convert Animal to AnimalDTO with subscriberId
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     // Obtenir tous les animaux

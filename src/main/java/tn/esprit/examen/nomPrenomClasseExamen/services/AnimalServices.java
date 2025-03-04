@@ -25,11 +25,21 @@ public class AnimalServices implements IAnimalServices {
     private SubscriberRepository subscriberRepository;
 
     @Override
-    public Animal addAnimal(AnimalDTO animalDTO) {
+    public Animal addAnimal(AnimalDTO animalDTO,Long iduser) {
         if (animalDTO == null) {
             throw new IllegalArgumentException("Les données de l'animal sont nulles.");
         }
 
+//        // Validate subscriber information
+//        if (animalDTO.getSubscriber() == null || animalDTO.getSubscriber().getIdUser() == null) {
+//            throw new IllegalArgumentException("L'ID du subscriber est requis.");
+//        }
+//
+//        // Fetch the subscriber from the database
+        Subscriber subscriber = subscriberRepository.findById(iduser)
+                .orElseThrow(() -> new IllegalArgumentException("Subscriber (User) non trouvé avec l'ID : " + animalDTO.getSubscriber().getIdUser()));
+        System.out.println(subscriber.getIdUser());
+        // Create the animal object
         Animal animal = new Animal();
         animal.setName(animalDTO.getName());
         animal.setAnimalSpecies(animalDTO.getAnimalSpecies());
@@ -37,13 +47,14 @@ public class AnimalServices implements IAnimalServices {
         animal.setMedicalHistory(animalDTO.getMedicalHistory());
         animal.setIsAdopted(animalDTO.getIsAdopted());
         animal.setHealthcare(animalDTO.getHealthcare());
+        animal.setSubscriber(subscriber);
 
-        // Récupérer le Subscriber via son idUser
-        //        Subscriber subscriber = subscriberRepository.findById(animalDTO.getSubscriber().getIdUser())
-        //              .orElseThrow(() -> new IllegalArgumentException("Subscriber (User) non trouvé avec l'ID : " + animalDTO.getSubscriber().getIdUser()));
-        //    animal.setSubscriber(subscriber);
+        // Save the animal and return the saved entity
         return animalRepository.save(animal);
     }
+
+
+
 
     @Override
     public Animal updateAnimal(Long id, Animal updatedAnimal) {
@@ -55,7 +66,6 @@ public class AnimalServices implements IAnimalServices {
                     existingAnimal.setMedicalHistory(updatedAnimal.getMedicalHistory());
                     existingAnimal.setIsAdopted(updatedAnimal.getIsAdopted());
                     existingAnimal.setHealthcare(updatedAnimal.getHealthcare());
-                    existingAnimal.setSubscriber(updatedAnimal.getSubscriber());
                     return animalRepository.save(existingAnimal);
                 }).orElseThrow(() -> new RuntimeException("Animal non trouvé avec l'ID : " + id));
     }

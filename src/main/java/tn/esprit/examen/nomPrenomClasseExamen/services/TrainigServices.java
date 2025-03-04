@@ -7,12 +7,11 @@ import org.springframework.stereotype.Service;
 import tn.esprit.examen.nomPrenomClasseExamen.Repositories.SubscriberRepository;
 import tn.esprit.examen.nomPrenomClasseExamen.Repositories.TrainingRepository;
 import tn.esprit.examen.nomPrenomClasseExamen.dto.TrainingDTO;
+import tn.esprit.examen.nomPrenomClasseExamen.entities.Role;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Subscriber;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Training;
 
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -87,20 +86,38 @@ public class TrainigServices implements ITrainingServices {
     }
 
     // Ajouter un abonné à une formation
-    public Training addSubscriberToTraining(@Valid Long trainingId, Long subscriberId) {
-        if (subscriberId == null) {
-            throw new IllegalArgumentException("L'abonné ne peut pas être nul.");
+    public Training addSubscriberToTraining(Long trainingId, Long subscriberId) {
+        if (subscriberId == null || subscriberId == null) {
+            throw new IllegalArgumentException("Les IDs du mentor et de l'abonné ne peuvent pas être nuls.");
         }
 
+        // Récupérer la formation
         Training training = trainingRepository.findById(trainingId)
                 .orElseThrow(() -> new NoSuchElementException("Formation non trouvée avec l'ID: " + trainingId));
 
+        // Vérifier que le mentor existe et qu'il a bien le rôle de MENTOR
+        Subscriber mentor = subscriberRepository.findById(subscriberId)
+                .orElseThrow(() -> new NoSuchElementException("Mentor non trouvé avec l'ID: " + subscriberId));
+
+
+
+        // Récupérer l'abonné
         Subscriber subscriber = subscriberRepository.findById(subscriberId)
-                .orElseThrow(() -> new NoSuchElementException("Abonné non trouvé avec l'ID: " + subscriberId));
+                .orElseThrow(() -> new NoSuchElementException("Utilisateur non trouvé avec l'ID: " + subscriberId));
 
-        training.getSubscribers().add(subscriber);
-        log.info("Abonné ajouté à la formation avec ID {}", trainingId);
+        // Ajouter l'abonné à la formation sans écraser les anciens
+        Set<Subscriber> subscriberSet = training.getSubscribers();
+        if (subscriberSet == null) {
+            subscriberSet = new HashSet<>();
+        }
 
-        return trainingRepository.save(training);
+        if (!subscriberSet.contains(subscriber)) {
+            subscriberSet.add(subscriber);
+            training.setSubscribers(subscriberSet);
+            return trainingRepository.save(training);
+        } else {
+            throw new IllegalArgumentException("L'abonné est déjà inscrit à cette formation.");
+        }
     }
+
 }

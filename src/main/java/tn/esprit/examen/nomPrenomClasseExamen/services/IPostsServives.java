@@ -4,6 +4,7 @@ import tn.esprit.examen.nomPrenomClasseExamen.dto.PostsDTO;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Posts;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface IPostsServives {
@@ -18,4 +19,8 @@ public interface IPostsServives {
     List<Posts> getAllPosts();
 
     List<Posts> getPostsBySubscription(Long subscriptionId);
+
+    Posts toggleLike(Long postId, Long userId);
+
+    Long getLikesCountByPost(Long id);
 }

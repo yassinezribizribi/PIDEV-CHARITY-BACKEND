@@ -8,6 +8,7 @@ import tn.esprit.examen.nomPrenomClasseExamen.entities.Posts;
 import tn.esprit.examen.nomPrenomClasseExamen.services.IPostsServives;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -31,6 +32,12 @@ public class PostsController {
         return ResponseEntity.ok(post);
     }
 
+    @PutMapping("/likePost/{postId}/user/{userId}")
+    public ResponseEntity<Posts> toggleLike(@PathVariable Long postId, @PathVariable Long userId) {
+        Posts updatedPost = postsServices.toggleLike(postId, userId);
+        return ResponseEntity.ok(updatedPost);
+    }
+
     // Supprimer un post
     @DeleteMapping("/deletePost/{id}")
     public ResponseEntity<String> deletePost(@PathVariable Long id) {
@@ -52,10 +59,25 @@ public class PostsController {
         return ResponseEntity.ok(postsList);
     }
 
+//    @GetMapping("/all/{userId}")
+//    public ResponseEntity<List<Posts>> getAllPosts(@PathVariable Long userId) {
+//        List<Posts> posts = postsServices.getAllPosts(userId);
+//        return ResponseEntity.ok(posts);
+//    }
+
+
+
     // Récupérer les posts par Subscription
     @GetMapping("/getPostsBySubscription/{subscriptionId}")
     public ResponseEntity<List<Posts>> getPostsBySubscription(@PathVariable Long subscriptionId) {
         List<Posts> postsList = postsServices.getPostsBySubscription(subscriptionId);
         return ResponseEntity.ok(postsList);
     }
+
+    @GetMapping("/{id}/likes-count")
+    public ResponseEntity<Long> getLikesCountByPost(@PathVariable Long id) {
+        Long likesCount = postsServices.getLikesCountByPost(id);
+        return ResponseEntity.ok(likesCount);
+    }
+
 }

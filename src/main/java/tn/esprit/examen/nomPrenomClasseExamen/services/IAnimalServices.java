@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface IAnimalServices {
-    Animal addAnimal(AnimalDTO animalDTO);
+    public Animal addAnimal(AnimalDTO animalDTO,Long iduser);
 
     Animal updateAnimal(Long id, Animal updatedAnimal);
 

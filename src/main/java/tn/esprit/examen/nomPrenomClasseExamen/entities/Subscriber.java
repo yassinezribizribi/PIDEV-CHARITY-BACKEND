@@ -38,8 +38,11 @@ public class Subscriber extends User { // Inherits from User
     private Set<Donation> donations;
 
     @ManyToMany(mappedBy = "subscribers", cascade = CascadeType.PERSIST)
+    @JsonIgnore
     private Set<Training> trainings;
-
+    @ManyToMany
+    @JsonIgnore
+    private Set<Event> events;
     @ManyToMany(mappedBy = "subscribers", cascade = CascadeType.PERSIST)
     private Set<Forum> forums;
 

@@ -1,5 +1,6 @@
 package tn.esprit.examen.nomPrenomClasseExamen.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
@@ -7,6 +8,7 @@ import lombok.experimental.FieldDefaults;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Set;
 
 @Getter
@@ -47,9 +49,22 @@ public class Event implements Serializable {
 
     @ManyToOne
     @JoinColumn(name = "association_id_association")
+    @JsonIgnore
     private Association association;
 
+    @ManyToMany
+    @JoinTable(
+            name = "event_subscriber",
+            joinColumns = @JoinColumn(name = "event_id"),
+            inverseJoinColumns = @JoinColumn(name = "subscriber_id")
+    )
+    @JsonIgnore
+    private Set<Subscriber> event_subscribers;
+
+    
     @OneToMany(mappedBy = "event", cascade = CascadeType.ALL)
+    @JsonIgnore
     private Set<Notification> notifications;
+
 
 }
