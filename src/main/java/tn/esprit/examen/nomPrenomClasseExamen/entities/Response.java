@@ -1,9 +1,11 @@
 package tn.esprit.examen.nomPrenomClasseExamen.entities;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.Set;
 
@@ -16,17 +18,20 @@ import java.util.Set;
 @Entity
 public class Response implements Serializable {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)  // Permet l'auto-incrémentation
-
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idRespons;
-    private Long idSender;
-    private Long idReceiver;
-    private Date dateRespons ;
+    private LocalDateTime dateRespons;
     private String content;
     private String object;
 
-    @ManyToMany(mappedBy="responses", cascade = CascadeType.ALL)
-    private Set<Request> requests;
+    @ManyToOne
+    @JsonIgnore
+    @JoinColumn(name = "request_id")
+    private Request request;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User sender;
 
 
 

@@ -1,9 +1,12 @@
 package tn.esprit.examen.nomPrenomClasseExamen.entities;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.Set;
 
@@ -15,24 +18,48 @@ import java.util.Set;
 @FieldDefaults(level= AccessLevel.PRIVATE)
 @Entity
 public class Donation implements Serializable {
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)  // Permet l'auto-incrémentation
-
     private Long idDonation;
-    private String quantite ;
+
+    private String titre; // Title for donation request (set by association)
+    private String description; // Details about the donation request
+    private int quantiteDemandee; // Total amount needed (set by the association)
+    private int quantiteDonnee ; // Total amount received (updated as donors contribute)
+
     private Boolean availability;
-    private Date lastUpdated;
+    private LocalDateTime lastUpdated;
     private DonationType donationType;
-    private Long numCompte;//visitor
+    //    // 🔹 DONOR contributes to an existing donation
+//    private String nomDoneur;
+//    private String prenomDoneur;
+//    private Long numCompte;//visitor
+//    private int quantite ;
+    private int quantiteExcedentaire ; // NEW: To track excess donations
 
-    @OneToOne
-    private Paiement paiement;
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "donation")
+    @JsonIgnore // Prevent recursion here
+    private Set<Dons> dons;
 
+    @ManyToOne
+    @JsonIgnore // Prevent recursion here
 
-    @ManyToMany(cascade = CascadeType.ALL)
-    private Set<Subscriber> subscribers;
+    Association associationDonation;
 
-    @ManyToMany(cascade = CascadeType.ALL)
-    private Set<CagnotteEnligne> cagnotteenlignes;
+    @OneToOne(cascade = CascadeType.ALL)
+    @JsonIgnore // Prevent recursion here
 
+    private CagnotteEnligne cagnotteenligne;
+    // 🔹 Update donation logic
+    public void addDonation(int quantite) {
+        int newTotal = this.quantiteDonnee + quantite;
+
+        if (newTotal > this.quantiteDemandee) {
+            this.quantiteExcedentaire += (newTotal - this.quantiteDemandee);
+        }
+
+        this.quantiteDonnee = newTotal;
+        this.lastUpdated = LocalDateTime.now();
+    }
 }

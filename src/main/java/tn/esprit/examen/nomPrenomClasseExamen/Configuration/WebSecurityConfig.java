@@ -14,6 +14,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import tn.esprit.examen.nomPrenomClasseExamen.jwt.AuthTokenFilter;
 import tn.esprit.examen.nomPrenomClasseExamen.jwt.CustomAccessDeniedHandler;
 import tn.esprit.examen.nomPrenomClasseExamen.jwt.CustomAuthenticationSuccessHandler;
@@ -38,14 +41,14 @@ public class WebSecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Allow OPTIONS requests
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/protected/files/**").authenticated() // Protect file endpoints
                         .requestMatchers("/error").permitAll()
-                        .requestMatchers(HttpMethod.PUT, "/api/associations/*/verify").hasRole("ADMIN") // ✅ Requires ROLE_ADMIN
+                        .requestMatchers(HttpMethod.PUT, "/api/associations/*/verify").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/associations").permitAll()
-
                         .anyRequest().authenticated()
                 )
-                // 👇 Add this line to integrate the JWT filter
                 .addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint((request, response, authException) -> {
@@ -54,6 +57,7 @@ public class WebSecurityConfig {
                         .accessDeniedHandler(customAccessDeniedHandler)
                 )
                 .build();
+
     }
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -67,17 +71,15 @@ public class WebSecurityConfig {
 
     // CORS Configuration
     @Bean
-    public org.springframework.web.cors.CorsConfigurationSource corsConfigurationSource() {
-        org.springframework.web.cors.UrlBasedCorsConfigurationSource source = new org.springframework.web.cors.UrlBasedCorsConfigurationSource();
-        org.springframework.web.cors.CorsConfiguration config = new org.springframework.web.cors.CorsConfiguration();
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOriginPatterns(Arrays.asList("http://localhost:4200")); // Allow your frontend origin
+        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS","PATCH")); // Allow necessary methods
+        config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept")); // Allow necessary headers
+        config.setAllowCredentials(true); // Allow credentials (e.g., cookies, authorization headers)
 
-        // Allow specific origins (do not use "*" with credentials)
-        config.setAllowedOriginPatterns(Arrays.asList("http://localhost:4200"));
-        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept"));
-        config.setAllowCredentials(true); // Allow credentials
-
-        source.registerCorsConfiguration("/api/**", config);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config); // Apply to all endpoints
         return source;
     }
 

@@ -1,6 +1,6 @@
 package tn.esprit.examen.nomPrenomClasseExamen.dto;
 
-import jakarta.validation.constraints.NotNull;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.*;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Forum;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.JobApplication;
@@ -14,34 +14,31 @@ import java.util.Set;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
 public class JobOfferDto implements Serializable {
     private Long idJobOffer;
     private String title;
     private String description;
     private String requirements;
     private boolean isActive;
-    private Forum forum;
-    private Set<JobApplication> jobApplications;
-
-    // New fields for createdBy and createdAt
-    private Long createdById;  // We will pass the user ID from the token
+    private Long forumId;
+    private Long createdById;  // Only include the creator's ID
     private LocalDateTime createdAt;
 
-    // Convert DTO to Entity
+    // Remove jobApplications and other complex fields
+
     public JobOffer toJobOffer() {
         JobOffer jobOffer = new JobOffer();
-        jobOffer.setIdJobOffer(this.idJobOffer);
         jobOffer.setTitle(this.title);
         jobOffer.setDescription(this.description);
         jobOffer.setRequirements(this.requirements);
         jobOffer.setActive(this.isActive);
-        jobOffer.setForum(this.forum);
-        jobOffer.setJobApplications(this.jobApplications);
-        jobOffer.setCreatedAt(this.createdAt);
+
+        // Handle forumId in the service layer
         return jobOffer;
     }
 
-    // Convert Entity to DTO
     public static JobOfferDto fromJobOffer(JobOffer jobOffer) {
         return new JobOfferDto(
                 jobOffer.getIdJobOffer(),
@@ -49,9 +46,8 @@ public class JobOfferDto implements Serializable {
                 jobOffer.getDescription(),
                 jobOffer.getRequirements(),
                 jobOffer.isActive(),
-                jobOffer.getForum(),
-                jobOffer.getJobApplications(),
-                jobOffer.getCreatedBy() != null ? jobOffer.getCreatedBy().getIdUser() : null, // Get ID of the creator
+                jobOffer.getForum() != null ? jobOffer.getForum().getIdForum() : null,
+                jobOffer.getCreatedBy() != null ? jobOffer.getCreatedBy().getIdUser() : null,
                 jobOffer.getCreatedAt()
         );
     }

@@ -1,5 +1,6 @@
 package tn.esprit.examen.nomPrenomClasseExamen.dto;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.*;
@@ -21,7 +22,9 @@ public class JobApplicationDto {
     private LocalDateTime applicationDate;
     @NotNull(message = "Job Application Status cannot be null")
     private JobApplicationStatus jobApplicationStatus;
+    @JsonManagedReference
     private Long jobOfferId;
+    @JsonManagedReference
     private Long applicantId;
 
     // Méthode statique pour convertir une entité en DTO

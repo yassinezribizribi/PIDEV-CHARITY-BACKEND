@@ -18,11 +18,11 @@ import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
-@NoArgsConstructor
 public class AssociationServices {
     private AssociationRepository associationRepository;
     private SubscriberRepository subscriberRepository;
-    private JwtUtils jwtUtils;
+    private final EmailService emailService;
+    private final JwtUtils jwtUtils;
 
     // For getting all associations (token is not needed)
     public List<AssociationDto> getAllAssociations() {
@@ -38,18 +38,35 @@ public class AssociationServices {
                 .map(this::convertToDto);
     }
 
+
+
     // For creating an association (token is needed)
     public AssociationDto createAssociation(AssociationDto associationDto, String token) {
         Long userId = jwtUtils.getUserIdFromJwtToken(token);
 
-        Association association = convertToEntity(associationDto);
+        // First check if association already exists using user ID
+        Optional<Association> existingAssociation = associationRepository.findBySubscriberIdUser(userId);
+        if (existingAssociation.isPresent()) {
+            throw new RuntimeException("Subscriber already has an association");
+        }
+
+        // Then fetch the subscriber (if needed for association creation)
         Subscriber subscriber = subscriberRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Subscriber not found with id " + userId));
 
+        Association association = convertToEntity(associationDto);
         association.setSubscriber(subscriber);
 
         return convertToDto(associationRepository.save(association));
     }
+
+    public Optional<AssociationDto> getAssociationByUserId(String token) {
+        Long userId = jwtUtils.getUserIdFromJwtToken(token);
+
+        return associationRepository.findBySubscriberIdUser(userId)
+                .map(this::convertToDto);
+    }
+
 
     // For updating an association (token is needed)
     public AssociationDto updateAssociation(Long id, AssociationDto associationDto, String token) {
@@ -75,11 +92,40 @@ public class AssociationServices {
         }).orElseThrow(() -> new RuntimeException("Association not found with id " + id));
     }
 
-    // For deleting an association (token is needed)
-    public void deleteAssociation(Long id, String token) {
-        associationRepository.deleteById(id);
+    // For verifying an association
+    public AssociationDto verifyAssociation(Long id, String token) {
+        // Retrieve the association by ID
+        Association association = associationRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Association not found with id " + id));
+
+        // Set the association as validated
+        association.setStatus(Association.AssociationStatus.APPROVED);
+
+        // Save the updated association to the database
+        associationRepository.save(association);
+
+        // Retrieve the Subscriber who created the Association
+        Subscriber subscriber = association.getSubscriber();
+
+        // Send an email to the subscriber about the association verification
+        sendVerificationEmail(subscriber);
+
+        // Return the updated association as a DTO
+        return convertToDto(association);
     }
 
+    // Send the verification email
+    private void sendVerificationEmail(Subscriber subscriber) {
+        String subject = "Association Verified";
+        String body = "Dear " + subscriber.getFirstName() + " " + subscriber.getLastName() +
+                ",\n\nYour association has been successfully verified and approved.\n\n" +
+                "Best regards,\nThe Team";
+
+        // Send the email
+        emailService.sendEmail(subscriber.getEmail(), subject, body);
+    }
+
+    // Method to convert Association to DTO
     private AssociationDto convertToDto(Association association) {
         return new AssociationDto(
                 association.getIdAssociation(),
@@ -98,6 +144,7 @@ public class AssociationServices {
         );
     }
 
+    // Method to convert AssociationDto to Association entity
     private Association convertToEntity(AssociationDto associationDto) {
         Association association = new Association();
         association.setIdAssociation(associationDto.getIdAssociation());
@@ -114,4 +161,10 @@ public class AssociationServices {
         association.setNotifications(associationDto.getNotifications());
         return association;
     }
+
+    // For deleting an association (token is needed)
+    public void deleteAssociation(Long id, String token) {
+        associationRepository.deleteById(id);
+    }
 }
+

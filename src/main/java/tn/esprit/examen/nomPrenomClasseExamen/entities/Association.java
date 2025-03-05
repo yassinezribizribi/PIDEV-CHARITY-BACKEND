@@ -1,8 +1,11 @@
 package tn.esprit.examen.nomPrenomClasseExamen.entities;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.Set;
 
 @Entity
@@ -21,14 +24,24 @@ public class Association implements Serializable {
     private String associationName;
     private String description;
 
-    @Enumerated(EnumType.STRING)
+    @Enumerated(EnumType.STRING) // Storing as string in the database
     private AssociationStatus status = AssociationStatus.PENDING; // Default status is PENDING
 
+    // Association.java
     public enum AssociationStatus {
         PENDING,
         APPROVED,
-        REJECTED
+        REJECTED;
+
+        @JsonCreator
+        public static AssociationStatus fromValue(String value) {
+            return Arrays.stream(values())
+                    .filter(status -> status.name().equalsIgnoreCase(value))
+                    .findFirst()
+                    .orElse(PENDING); // Default to PENDING if the value is invalid
+        }
     }
+
 
     // Instead of storing large binary data, store file paths (more efficient)
     private String associationLogoPath;
@@ -37,19 +50,22 @@ public class Association implements Serializable {
 
     // ✅ Relationship with Subscriber (1-1)
     @OneToOne
-    @JoinColumn(name = "subscriber_id", unique = true)
     private Subscriber subscriber;
 
     // ✅ Other relationships
     @ManyToMany(cascade = CascadeType.ALL)
+    @JsonManagedReference
     private Set<Subscription> subscriptions;
 
     @ManyToMany(cascade = CascadeType.ALL)
+    @JsonManagedReference
     private Set<Mission> missions;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "association")
+    @JsonManagedReference
     private Set<Event> events;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "association")
+    @JsonManagedReference
     private Set<Notification> notifications;
 }
