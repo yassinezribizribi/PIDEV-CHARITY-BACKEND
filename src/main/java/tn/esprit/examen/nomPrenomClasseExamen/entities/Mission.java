@@ -16,9 +16,9 @@ import java.util.Set;
 @Entity
 
 public class Mission implements Serializable{
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)  // Permet l'auto-incrémentation
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
 
+    @Id
     private Long idMission;
     private String description;
     private String location;
@@ -32,4 +32,8 @@ public class Mission implements Serializable{
 
     @ManyToOne
     Crisis crisis;
+
+//    @OneToMany(cascade = CascadeType.ALL, mappedBy="missionsubscriber")
+//    private Set<Subscriber> subscribersMission;
+
 }

@@ -1,5 +1,6 @@
 package tn.esprit.examen.nomPrenomClasseExamen.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,15 +22,24 @@ public class AssociationDto {
     private String associationName;
     private String description;
     private Association.AssociationStatus status;
-
-    // Store file paths instead of binary data
     private String associationLogoPath;
     private String registrationDocumentPath;
     private String legalDocumentPath;
 
+    // Use @JsonIgnore to avoid circular references
+    @JsonIgnore
     private Subscriber subscriber;
+
+    // Use @JsonIgnore to avoid circular references
+    @JsonIgnore
     private Set<Subscription> subscriptions;
+
+    @JsonIgnore
     private Set<Mission> missions;
+
+    @JsonIgnore
     private Set<Event> events;
+
+    @JsonIgnore
     private Set<Notification> notifications;
 }

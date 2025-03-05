@@ -1,5 +1,7 @@
 package tn.esprit.examen.nomPrenomClasseExamen.entities;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -30,21 +32,27 @@ public class Subscriber extends User {
     private Healthcare healthcare;
 
     @OneToOne(mappedBy = "subscriber", cascade = CascadeType.ALL)
+    @JsonBackReference
     private Association association;
 
     @OneToMany(cascade = CascadeType.ALL)
+    @JsonIgnore
     private Set<Animal> animals;
 
-    @ManyToMany(mappedBy="subscribers", cascade = CascadeType.ALL)
-    private Set<Donation> donations;
+//    @ManyToMany(mappedBy="subscribers", cascade = CascadeType.ALL)
+//    @JsonIgnore
+
+//    private Set<Donation> donations;
 
     @ManyToMany(mappedBy="subscribers", cascade = CascadeType.ALL)
+    @JsonIgnore
     private Set<Training> trainings;
 
     @ManyToMany(mappedBy = "subscribers")
+    @JsonIgnore
     private Set<Forum> forums;
 
-    // New field to track job offers created by the subscriber
     @OneToMany(mappedBy = "createdBy", cascade = CascadeType.ALL)
-    private Set<JobOffer> jobOffers; // This field will track the job offers created by this subscriber
+    @JsonIgnore
+    private Set<JobOffer> jobOffers;
 }

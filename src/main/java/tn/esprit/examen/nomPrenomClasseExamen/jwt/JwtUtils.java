@@ -19,7 +19,6 @@ import java.util.stream.Collectors;
 
 @Component
 @NoArgsConstructor
-@AllArgsConstructor
 
 public class JwtUtils {
     private static final Logger logger = LoggerFactory.getLogger(JwtUtils.class);
@@ -29,6 +28,11 @@ public class JwtUtils {
 
     @Value("${bezkoder.app.jwtExpirationMs}")
     private int jwtExpirationMs;
+    public JwtUtils(@Value("${bezkoder.app.jwtSecret}") String jwtSecret,
+                    @Value("${bezkoder.app.jwtExpirationMs}") int jwtExpirationMs) {
+        this.jwtSecret = jwtSecret;
+        this.jwtExpirationMs = jwtExpirationMs;
+    }
 
     public String generateJwtToken(Authentication authentication) {
         SubDetailsImpl userPrincipal = (SubDetailsImpl) authentication.getPrincipal();
@@ -42,13 +46,17 @@ public class JwtUtils {
                 .collect(Collectors.toList())
         );
 
-        return Jwts.builder()
-                .setClaims(claims) // ✅ Use the claims map
-                .setSubject(userPrincipal.getEmail())  // Email as subject
+        String jwtToken = Jwts.builder()
+                .setClaims(claims)
+                .setSubject(userPrincipal.getEmail())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
                 .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes()), SignatureAlgorithm.HS256)
                 .compact();
+        logger.debug("Generated JWT: {}", jwtToken);  // Log the token to check its structure
+        return jwtToken;
+
+
     }
 
     public String getUserNameFromJwtToken(String token) {
@@ -70,25 +78,21 @@ public class JwtUtils {
 
 
     public boolean validateJwtToken(String authToken) {
-        try {
-            logger.debug("✅ Validation du JWT : {}", authToken);
+        if (authToken == null || authToken.split("\\.").length != 3) {
+            logger.error("❌ Invalid JWT format: {}", authToken);
+            return false;
+        }
 
+        try {
             Jwts.parserBuilder().setSigningKey(Keys.hmacShaKeyFor(jwtSecret.getBytes()))
                     .build()
                     .parseClaimsJws(authToken);
             return true;
-        } catch (SignatureException e) {
-            logger.error("❌ Signature JWT invalide : {}", e.getMessage());
-        } catch (MalformedJwtException e) {
-            logger.error("❌ JWT mal formé : {}", e.getMessage());
-        } catch (ExpiredJwtException e) {
-            logger.error("❌ JWT expiré : {}", e.getMessage());
-        } catch (UnsupportedJwtException e) {
-            logger.error("❌ JWT non supporté : {}", e.getMessage());
-        } catch (IllegalArgumentException e) {
-            logger.error("❌ JWT claims string vide : {}", e.getMessage());
+        } catch (Exception e) {
+            logger.error("❌ JWT validation failed: {}", e.getMessage());
         }
 
         return false;
     }
+
 }

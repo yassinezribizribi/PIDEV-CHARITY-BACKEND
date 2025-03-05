@@ -41,9 +41,9 @@ public class JobOfferServices {
         try {
             logger.info("📝 Création d'une nouvelle offre d'emploi: {}", jobOfferDto);
 
-            // Récupération du forum avec ID 1
-            Forum forum = forumRepository.findById(1L)
-                    .orElseThrow(() -> new RuntimeException("Forum avec ID 1 introuvable"));
+            // Récupération du forum à partir de forumId dans le DTO
+            Forum forum = forumRepository.findById(jobOfferDto.getForumId())
+                    .orElseThrow(() -> new RuntimeException("Forum avec ID " + jobOfferDto.getForumId() + " introuvable"));
 
             // Extract the current logged-in user (subscriber) from the token
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -53,7 +53,7 @@ public class JobOfferServices {
 
             // Conversion DTO → Entité
             JobOffer jobOffer = jobOfferDto.toJobOffer();
-            jobOffer.setForum(forum); // Association automatique
+            jobOffer.setForum(forum); // Association automatique avec le forum récupéré
             jobOffer.setCreatedBy(subscriber); // Set the user who created the job offer
             jobOffer.setCreatedAt(LocalDateTime.now()); // Set the creation timestamp
 
@@ -78,8 +78,10 @@ public class JobOfferServices {
         jobOffer.setActive(jobOfferDto.isActive());
 
         // Vérification et mise à jour du forum si nécessaire
-        if (jobOfferDto.getForum() != null) {
-            jobOffer.setForum(jobOfferDto.getForum());
+        if (jobOfferDto.getForumId() != null) {
+            Forum forum = forumRepository.findById(jobOfferDto.getForumId())
+                    .orElseThrow(() -> new RuntimeException("Forum avec ID " + jobOfferDto.getForumId() + " introuvable"));
+            jobOffer.setForum(forum);
         }
 
         JobOffer updated = jobOfferRepository.save(jobOffer);

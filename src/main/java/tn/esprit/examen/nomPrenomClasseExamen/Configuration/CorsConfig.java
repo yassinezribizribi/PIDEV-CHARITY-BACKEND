@@ -9,11 +9,11 @@ public class CorsConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        // Remplacer 'allowedOrigins("*")' par 'allowedOriginPatterns' pour permettre les credentials.
         registry.addMapping("/api/**")
-                .allowedOrigins("http://localhost:4200") // ✅ Utilisation de allowedOriginPatterns pour spécifier les origines autorisées
+                .allowedOriginPatterns("http://localhost:4200")
                 .allowedMethods("*")
                 .allowedHeaders("*")
+                .exposedHeaders("Authorization")
                 .allowCredentials(true);
     }
 }

@@ -1,4 +1,5 @@
 package tn.esprit.examen.nomPrenomClasseExamen.entities;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -27,6 +28,7 @@ public class Event implements Serializable {
     private Date reservationDate;
 
     @ManyToOne
+    @JsonBackReference
     Association association;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy="event")
