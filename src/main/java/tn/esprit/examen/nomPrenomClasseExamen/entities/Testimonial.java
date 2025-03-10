@@ -1,44 +1,30 @@
 package tn.esprit.examen.nomPrenomClasseExamen.entities;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import lombok.*;
-import lombok.experimental.FieldDefaults;
-
-
-import java.io.Serializable;
 
 @Getter
 @Setter
-@ToString
 @AllArgsConstructor
 @NoArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-public class Testimonial implements Serializable {
+@Table(name = "testimonial")
+public class Testimonial {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long idTestimonial;
+    private Long id;
 
-    @NotBlank(message = "Le contenu ne peut pas être vide")
-    @Size(min = 10, max = 500, message = "Le contenu doit être entre 10 et 500 caractères")
+    @Column(nullable = false, length = 500)
     private String content;
 
-    @NotBlank(message = "L'URL de la photo avant est requise")
-    private String beforePhoto;
-
-    @NotBlank(message = "L'URL de la photo après est requise")
-    private String afterPhoto;
-
-    @Size(max = 1000, message = "La description ne doit pas dépasser 1000 caractères")
+    @Column(length = 1000)
     private String description;
 
-    // ✅ Relation avec User (un testimonial appartient à un utilisateur)
-    @NotNull(message = "L'utilisateur est obligatoire")
     @ManyToOne
-    @JoinColumn(name = "id_user", nullable = false)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
+
+    private String beforePhotoPath;
+    private String afterPhotoPath;
 }

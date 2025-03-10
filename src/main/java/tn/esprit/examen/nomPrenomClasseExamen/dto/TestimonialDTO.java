@@ -1,26 +1,21 @@
 package tn.esprit.examen.nomPrenomClasseExamen.dto;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class TestimonialDTO {
-
-    @NotBlank(message = "Le contenu ne peut pas être vide")
-    @Size(min = 10, max = 500, message = "Le contenu doit être entre 10 et 500 caractères")
+    private Long id;
     private String content;
-
-    @NotBlank(message = "L'URL de la photo avant est requise")
-    private String beforePhoto;
-
-    @NotBlank(message = "L'URL de la photo après est requise")
-    private String afterPhoto;
-
-    @Size(max = 1000, message = "La description ne doit pas dépasser 1000 caractères")
     private String description;
-
-    @NotNull(message = "L'utilisateur est obligatoire")
     private Long userId;
+
+    private String beforePhotoBase64;
+    private String afterPhotoBase64;  // 🔥 Assure-toi que ce champ existe
+
+    private String beforePhotoPath;
+    private String afterPhotoPath;
 }

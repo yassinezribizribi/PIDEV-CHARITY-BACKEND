@@ -1,35 +1,51 @@
 package tn.esprit.examen.nomPrenomClasseExamen.aspects;
 
-import lombok.extern.slf4j.Slf4j;
-import org.aspectj.lang.JoinPoint;
-import org.aspectj.lang.annotation.*;
+import lombok.AllArgsConstructor;
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.annotation.Aspect;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-@Slf4j
-@Component
+import org.springframework.beans.BeanUtils;
+import tn.esprit.examen.nomPrenomClasseExamen.dto.TestimonialDTO;
+
+import java.util.Arrays;
+
 @Aspect
+@Component
+@AllArgsConstructor
 public class LoggingAspect {
-    @Pointcut("execution (* tn.esprit.examen.nomPrenomClasseExamen.services.*.*(..))")
-    public void methodCall() {}
+    private static final Logger logger = LoggerFactory.getLogger(LoggingAspect.class);
 
-    @Before("methodCall()")
-    public void methodEntry(JoinPoint joinPoint){
+    @Around("execution(* tn.esprit.examen.nomPrenomClasseExamen.services.*.*(..))")
+    public Object logServiceMethods(ProceedingJoinPoint joinPoint) throws Throwable {
+        String methodName = joinPoint.getSignature().getName();
+        Object[] args = sanitizeArguments(joinPoint.getArgs());
 
-        log.info("In Method : "+joinPoint.getSignature().getName());
-    }
-    @After("methodCall()")
-    public void outOfMethod(JoinPoint joinPoint){
-        log.info("Out of Method : "+joinPoint.getSignature().getName());
-    }
-    @AfterReturning("methodCall()")
-    public void logMethodExitReturn(JoinPoint joinPoint) {
-        String name = joinPoint.getSignature().getName();
-        log.info("AfterReturning " + name + " avec succès ! ");
+        logger.info("➡ Entrée dans la méthode : {}", methodName);
+        try {
+            Object result = joinPoint.proceed();
+            logger.info("⬅ Sortie de la méthode : {}", methodName);
+            return result;
+        } catch (Exception e) {
+            logger.error("❌ Exception dans la méthode {} : ", methodName, e);
+            throw e;
+        }
     }
 
-    @AfterThrowing(pointcut="methodCall()", throwing="nameEx")
-    public void logMethodExitThrowing(JoinPoint joinPoint, Throwable nameEx) {
-        String name = joinPoint.getSignature().getName();
-        log.info("AfterThrowing of method " + name + " : ");
-        log.error(nameEx.getMessage());
+    private Object[] sanitizeArguments(Object[] args) {
+        return Arrays.stream(args)
+                .map(arg -> {
+                    if (arg instanceof TestimonialDTO) {
+                        TestimonialDTO dto = new TestimonialDTO();
+                        BeanUtils.copyProperties(arg, dto);
+                        dto.setBeforePhotoBase64("[MASKED]");
+                        dto.setAfterPhotoBase64("[MASKED]");
+                        return dto;
+                    }
+                    return arg;
+                })
+                .toArray();
     }
 }

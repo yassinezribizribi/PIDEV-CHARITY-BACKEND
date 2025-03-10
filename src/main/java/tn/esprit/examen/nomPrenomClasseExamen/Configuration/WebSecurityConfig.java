@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -19,9 +20,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import tn.esprit.examen.nomPrenomClasseExamen.jwt.AuthTokenFilter;
 import tn.esprit.examen.nomPrenomClasseExamen.jwt.CustomAccessDeniedHandler;
-import tn.esprit.examen.nomPrenomClasseExamen.services.SubscriberDetailsServiceImpl;
 
-import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -29,28 +28,20 @@ import java.util.List;
 @EnableMethodSecurity
 @AllArgsConstructor
 public class WebSecurityConfig {
-
     private final AuthTokenFilter authTokenFilter;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
-    private final SubscriberDetailsServiceImpl userDetailsService;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Active CORS
-                .csrf(csrf -> csrf.disable()) // Désactive CSRF pour éviter les problèmes avec Angular
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // JWT = Stateless
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll() // Auth autorisé sans JWT
-                        .requestMatchers("/api/users/forgot-password", "/api/users/reset-password").permitAll() // ✅ Accessible sans authentification
-                        .requestMatchers("/api/testimonials/**").authenticated()
-                        .requestMatchers("/api/healthcare/notifications/**").authenticated()// ✅ Protégé mais accessible avec JWT
-
-
-
-                        .requestMatchers("/api/healthcare/all").authenticated() // ✅ Exige un JWT pour healthcare
-                        .requestMatchers("/api/healthcare/**").authenticated() // ✅ Sécurisé
-                        .anyRequest().authenticated() // Le reste nécessite une authentification
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/testimonials").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/testimonials/all").authenticated()
+                        .anyRequest().authenticated()
                 )
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint((request, response, authException) -> {
@@ -58,7 +49,7 @@ public class WebSecurityConfig {
                         })
                         .accessDeniedHandler(customAccessDeniedHandler)
                 )
-                .addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class) // Ajout du filtre JWT
+                .addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 
@@ -66,6 +57,7 @@ public class WebSecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
+
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
@@ -75,9 +67,9 @@ public class WebSecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:4200")); // Angular Frontend
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("Authorization", "Cache-Control", "Content-Type"));
+        configuration.setAllowedOrigins(List.of("http://localhost:4200"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
