@@ -4,7 +4,7 @@ public enum Categorie {
 NATURAL_DISASTER,
     FOOD_STORAGE,
     PANDEMIC,
-    MEDICAL_STORAGE
+    MEDICAL_STORAGE,
 
-
+    OTHER
 }

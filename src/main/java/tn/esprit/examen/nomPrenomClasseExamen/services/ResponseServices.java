@@ -11,7 +11,6 @@ import tn.esprit.examen.nomPrenomClasseExamen.entities.Request;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Response;
 
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -32,33 +31,41 @@ public class ResponseServices implements IResponseServices {
 
     @Override
     public ResponseDto getResponseById(Long id) {
-        logger.info("🔍 Fetching response with ID: {}", id);
-        Response response = responseRepository.findById(id)
-                .orElseThrow(() -> {
-                    logger.error("❌ Response with ID {} not found", id);
-                    return new RuntimeException("Response with ID " + id + " not found");
-                });
-        return ResponseDto.fromEntity(response);
+        logger.info("📢 Fetching response with ID: {}", id);
+        return responseRepository.findById(id)
+                .map(ResponseDto::fromEntity)
+                .orElseThrow(() -> new RuntimeException("Response not found with ID: " + id));
+    }
+
+    @Override
+    public Response addResponseToRequest(Long requestId, ResponseDto responseDto) {
+        Request request = requestRepository.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Request not found"));
+
+        Response response = new Response();
+        response.setContent(responseDto.getContent());
+        response.setRequest(request);
+
+        return responseRepository.save(response);
     }
 
     @Override
     public ResponseDto createResponse(ResponseDto responseDto) {
-        logger.info("📝 Creating response: {}", responseDto);
+        logger.info("📢 Creating a new response...");
 
-        // Récupérer les requêtes associées
-        Set<Request> requests = responseDto.getRequestIds() != null ?
-                responseDto.getRequestIds().stream()
-                        .map(id -> requestRepository.findById(id)
-                                .orElseThrow(() -> new RuntimeException("Request not found with ID: " + id)))
-                        .collect(Collectors.toSet())
-                : Set.of();
+        if (responseDto.getRequestId() == null) {
+            throw new RuntimeException("Request ID is required to create a response.");
+        }
 
-        // Convertir DTO en entité et associer les requêtes récupérées
-        Response response = ResponseDto.toEntity(responseDto, requests);
+        Request request = requestRepository.findById(responseDto.getRequestId())
+                .orElseThrow(() -> new RuntimeException("Request not found with ID: " + responseDto.getRequestId()));
 
-        // Sauvegarde de la réponse
+        Response response = new Response();
+        response.setContent(responseDto.getContent());
+        response.setRequest(request);
+
         Response savedResponse = responseRepository.save(response);
-        logger.info("✅ Response created successfully with ID: {}", savedResponse.getIdRespons());
+        logger.info("✅ Response created successfully: {}", savedResponse);
 
         return ResponseDto.fromEntity(savedResponse);
     }
@@ -66,21 +73,18 @@ public class ResponseServices implements IResponseServices {
     @Override
     public ResponseDto updateResponse(Long id, ResponseDto responseDto) {
         logger.info("🔄 Updating response with ID: {}", id);
-        Response existingResponse = responseRepository.findById(id)
-                .orElseThrow(() -> {
-                    logger.error("❌ Response with ID {} not found", id);
-                    return new RuntimeException("Response with ID " + id + " not found");
-                });
 
-        existingResponse.setIdSender(responseDto.getIdSender());
-        existingResponse.setIdReceiver(responseDto.getIdReceiver());
+        Response existingResponse = responseRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Response with ID " + id + " not found"));
+
         existingResponse.setDateRespons(responseDto.getDateResponse());
         existingResponse.setContent(responseDto.getContent());
         existingResponse.setObject(responseDto.getObject());
 
-        if (responseDto.getRequestIds() != null) {
-            Set<Request> requests = requestRepository.findAllById(responseDto.getRequestIds()).stream().collect(Collectors.toSet());
-            existingResponse.setRequests(requests);
+        if (responseDto.getRequestId() != null) {
+            Request request = requestRepository.findById(responseDto.getRequestId())
+                    .orElseThrow(() -> new RuntimeException("Request not found with ID: " + responseDto.getRequestId()));
+            existingResponse.setRequest(request);
         }
 
         Response updatedResponse = responseRepository.save(existingResponse);
@@ -92,10 +96,17 @@ public class ResponseServices implements IResponseServices {
     public void deleteResponse(Long id) {
         logger.info("🗑 Deleting response with ID: {}", id);
         if (!responseRepository.existsById(id)) {
-            logger.error("❌ Response with ID {} not found", id);
             throw new RuntimeException("Response with ID " + id + " not found");
         }
         responseRepository.deleteById(id);
         logger.info("✅ Response deleted successfully!");
+    }
+
+    @Override
+    public List<ResponseDto> getResponsesByRequestId(Long requestId) {
+        logger.info("📢 Fetching responses for request ID: {}", requestId);
+        return responseRepository.findByRequest_IdRequest(requestId).stream()
+                .map(ResponseDto::fromEntity)
+                .collect(Collectors.toList());
     }
 }

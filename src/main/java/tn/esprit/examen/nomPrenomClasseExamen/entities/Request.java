@@ -11,7 +11,6 @@ import java.util.Set;
 
 @Getter
 @Setter
-@ToString
 @AllArgsConstructor
 @NoArgsConstructor
 @FieldDefaults(level= AccessLevel.PRIVATE)
@@ -20,23 +19,21 @@ public class Request implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idRequest;
-    private Long idSender;
-    private Long idReceiver;
+
     private Date dateRequest;
     private String object;
     private String content;
     private Boolean isUrgent;
 
-    @ManyToMany(cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "request",cascade = CascadeType.ALL,fetch = FetchType.LAZY)
     @JsonIgnore
     private Set<Response> responses;
 
     @ManyToOne
             @JsonIgnore
     Forum forum;
-    public Request(Long idSender, Long idReceiver, Date dateRequest, String object, String content, Boolean isUrgent, Forum forum) {
-        this.idSender = idSender;
-        this.idReceiver = idReceiver;
+    public Request(Date dateRequest, String object, String content, Boolean isUrgent, Forum forum) {
+
         this.dateRequest = dateRequest;
         this.object = object;
         this.content = content;

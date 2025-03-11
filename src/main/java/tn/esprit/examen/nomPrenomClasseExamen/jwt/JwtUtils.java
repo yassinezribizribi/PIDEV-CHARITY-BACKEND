@@ -31,7 +31,7 @@ public class JwtUtils {
 
         // Create claims with `idUser`
         Map<String, Object> claims = new HashMap<>();
-        claims.put("idUser", userPrincipal.getId()); // ✅ Ensure `idUser` is included
+        claims.put("idUser", userPrincipal.getId());
         claims.put("roles", userPrincipal.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList())

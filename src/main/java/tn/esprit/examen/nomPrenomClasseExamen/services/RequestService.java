@@ -6,11 +6,19 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import tn.esprit.examen.nomPrenomClasseExamen.Repositories.ForumRepository;
 import tn.esprit.examen.nomPrenomClasseExamen.Repositories.RequestRepository;
+import tn.esprit.examen.nomPrenomClasseExamen.Repositories.ResponseRepository;
 import tn.esprit.examen.nomPrenomClasseExamen.dto.RequestDTO;
+import tn.esprit.examen.nomPrenomClasseExamen.dto.ResponseDto;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Forum;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Request;
+import tn.esprit.examen.nomPrenomClasseExamen.entities.Response;
+import tn.esprit.examen.nomPrenomClasseExamen.entities.User;
 
+
+import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @AllArgsConstructor
@@ -18,6 +26,7 @@ public class RequestService {
 
     private final RequestRepository requestRepository;
     private final ForumRepository forumRepository;
+    private final ResponseRepository responseRepository;
     private static final Logger logger = LoggerFactory.getLogger(RequestService.class);
 
     public List<Request> getAllRequests() {
@@ -59,8 +68,7 @@ public class RequestService {
         Request request = getRequestById(id);
 
         // Mise à jour des champs à partir du DTO
-        request.setIdSender(requestDTO.getIdSender());
-        request.setIdReceiver(requestDTO.getIdReceiver());
+        
         request.setDateRequest(requestDTO.getDateRequest());
         request.setObject(requestDTO.getObject());
         request.setContent(requestDTO.getContent());
@@ -83,4 +91,26 @@ public class RequestService {
         requestRepository.deleteById(id);
         logger.info("✅ Demande supprimée avec succès !");
     }
+
+    public Response addResponseToRequest(Long requestId, ResponseDto responseDto) {
+        // Récupérer la demande par son ID
+        Optional<Request> optionalRequest = requestRepository.findById(requestId);
+        if (optionalRequest.isEmpty()) {
+            throw new RuntimeException("Request not found with ID: " + requestId);
+        }
+
+        Request request = optionalRequest.get();
+
+        // Créer une nouvelle réponse
+        Response response = new Response();
+        response.setContent(responseDto.getContent());
+        response.setRequest(request); // Associer la réponse à la demande
+        response.setDateRespons(LocalDateTime.now());
+
+
+        // Enregistrer la réponse dans la base de données
+        return responseRepository.save(response);
+    }
+
 }
+

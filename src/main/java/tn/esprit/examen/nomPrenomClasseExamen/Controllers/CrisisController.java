@@ -44,7 +44,7 @@ public class CrisisController {
         return ResponseEntity.status(HttpStatus.CREATED).body(crisis);
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/update/{id}")
     public ResponseEntity<Crisis> updateCrisis(@PathVariable Long id, @RequestBody Crisis crisis) {
         try {
             Crisis updatedCrisis = crisisService.updateCrisis(id, crisis);

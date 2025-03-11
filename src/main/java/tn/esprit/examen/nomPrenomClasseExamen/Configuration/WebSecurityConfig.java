@@ -44,7 +44,6 @@ public class WebSecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Pas de session
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll() // Auth autorisé
-                        // ⚠️ Attention, tout ouvert
                         .anyRequest().authenticated() // Le reste nécessite une auth
                 )
                 .exceptionHandling(exception -> exception

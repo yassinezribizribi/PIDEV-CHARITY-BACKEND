@@ -5,6 +5,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.Set;
 
@@ -19,20 +20,18 @@ public class Response implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idRespons;
-    private Long idSender;
-    private Long idReceiver;
-    private Date dateRespons ;
+    private LocalDateTime dateRespons=LocalDateTime.now();
     private String content;
     private String object;
 
-    @ManyToMany
+    @ManyToOne
     @JsonIgnore
-    @JoinTable(
-            name = "response_request",
-            joinColumns = @JoinColumn(name = "response_id"),
-            inverseJoinColumns = @JoinColumn(name = "request_id")
-    )
-    private Set<Request> requests;
+    @JoinColumn(name = "request_id")
+    private Request request;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User sender;
 
 
 

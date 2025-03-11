@@ -14,13 +14,7 @@ import java.util.Date;
 @AllArgsConstructor
 public class RequestDTO {
 
-    @NotNull(message = "Sender ID cannot be null")
-    @Positive(message = "Sender ID must be a positive number")
-    private Long idSender;
 
-    @NotNull(message = "Receiver ID cannot be null")
-    @Positive(message = "Receiver ID must be a positive number")
-    private Long idReceiver;
 
     @NotNull(message = "Request date cannot be null")
     private Date dateRequest;
@@ -40,8 +34,7 @@ public class RequestDTO {
     // Static method to convert from entity to DTO
     public static RequestDTO fromEntity(Request request) {
         return new RequestDTO(
-                request.getIdSender(),
-                request.getIdReceiver(),
+
                 request.getDateRequest(),
                 request.getObject(),
                 request.getContent(),
@@ -53,8 +46,7 @@ public class RequestDTO {
     // Static method to convert from DTO to entity
     public static Request toEntity(RequestDTO dto, Forum forum) {
         return new Request(
-                dto.getIdSender(),
-                dto.getIdReceiver(),
+
                 dto.getDateRequest(),
                 dto.getObject(),
                 dto.getContent(),

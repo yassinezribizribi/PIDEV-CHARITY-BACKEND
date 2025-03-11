@@ -1,6 +1,8 @@
 package tn.esprit.examen.nomPrenomClasseExamen.entities;
 
 import java.io.Serializable;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -23,6 +25,7 @@ public class Forum implements Serializable {
     private Date dateCreation;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy="forum")
+    @JsonIgnore
     private Set<Request> requests;
 
     @ManyToMany(cascade = CascadeType.ALL)
