@@ -8,7 +8,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import tn.esprit.examen.nomPrenomClasseExamen.Repositories.ForumRepository;
 import tn.esprit.examen.nomPrenomClasseExamen.Repositories.JobOfferRepository;
-import tn.esprit.examen.nomPrenomClasseExamen.Repositories.SubscriberRepository; // Add Subscriber repository to fetch the user
+import tn.esprit.examen.nomPrenomClasseExamen.Repositories.SubscriberRepository;
+import tn.esprit.examen.nomPrenomClasseExamen.dto.JobApplicationDto;
 import tn.esprit.examen.nomPrenomClasseExamen.dto.JobOfferDto;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Forum;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.JobOffer;
@@ -16,6 +17,7 @@ import tn.esprit.examen.nomPrenomClasseExamen.entities.Subscriber;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -23,12 +25,44 @@ public class JobOfferServices {
 
     private final JobOfferRepository jobOfferRepository;
     private final ForumRepository forumRepository;
-    private final SubscriberRepository subscriberRepository; // To fetch the subscriber
+    private final SubscriberRepository subscriberRepository;
+    private final JobApplicationServices jobApplicationServices; // Inject JobApplicationServices
+
     private static final Logger logger = LoggerFactory.getLogger(JobOfferServices.class);
 
     public List<JobOffer> getAllJobOffers() {
-        logger.info("📢 Récupération de toutes les offres d'emploi...");
-        return jobOfferRepository.findAll();
+        List<JobOffer> offers = jobOfferRepository.findAll();
+        offers.forEach(o -> logger.info("DB Active State - ID: {} => {}", o.getIdJobOffer(), o.isActive()));
+        return offers;
+    }
+
+    /**
+     * Fetch job applications for a specific job offer.
+     * @param jobOfferId ID of the job offer to retrieve applications for
+     * @return List of job application DTOs
+     */
+    public List<JobApplicationDto> getApplicationsForJobOffer(Long jobOfferId) {
+        logger.info("Fetching job applications for job offer with ID: {}", jobOfferId);
+
+        try {
+            // Fetch the job offer by ID to ensure it exists
+            JobOffer jobOffer = jobOfferRepository.findById(jobOfferId)
+                    .orElseThrow(() -> new RuntimeException("JobOffer avec l'ID " + jobOfferId + " introuvable"));
+
+            // Retrieve the applications for the given job offer
+            List<JobApplicationDto> applications = jobApplicationServices.getApplicationsForJobOffer(jobOfferId);
+
+            if (applications.isEmpty()) {
+                logger.info("No applications found for job offer with ID: {}", jobOfferId);
+            } else {
+                logger.info("Found {} application(s) for job offer with ID: {}", applications.size(), jobOfferId);
+            }
+
+            return applications;
+        } catch (Exception e) {
+            logger.error("Error fetching applications for job offer with ID: {}: {}", jobOfferId, e.getMessage());
+            throw new RuntimeException("Error fetching applications for job offer: " + e.getMessage());
+        }
     }
 
     public JobOffer getJobOfferById(Long id) {
@@ -36,6 +70,26 @@ public class JobOfferServices {
         return jobOfferRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("JobOffer avec l'ID " + id + " introuvable"));
     }
+
+    // JobOfferServices.java
+    public List<JobOfferDto> getJobOffersByUser(Long userId) {
+        logger.info("🔍 Recherche des offres d'emploi pour l'utilisateur avec ID: {}", userId);
+
+        // Fetch job offers created by the specified user
+        List<JobOffer> jobOffers = jobOfferRepository.findByCreatedBy_IdUser(userId);
+
+        if (jobOffers.isEmpty()) {
+            logger.info("Aucune offre d'emploi trouvée pour l'utilisateur avec ID: {}", userId);
+        } else {
+            logger.info("✅ Offre(s) d'emploi trouvée(s) pour l'utilisateur {} : {}", userId, jobOffers);
+        }
+
+        // Convert JobOffer entities to JobOfferDto objects using the static method
+        return jobOffers.stream()
+                .map(JobOfferDto::fromJobOffer) // Use the static method from JobOfferDto
+                .collect(Collectors.toList());
+    }
+
 
     public JobOffer createJobOffer(JobOfferDto jobOfferDto) {
         try {
@@ -56,6 +110,7 @@ public class JobOfferServices {
             jobOffer.setForum(forum); // Association automatique avec le forum récupéré
             jobOffer.setCreatedBy(subscriber); // Set the user who created the job offer
             jobOffer.setCreatedAt(LocalDateTime.now()); // Set the creation timestamp
+            jobOffer.setActive(true); // Set the job offer as active by default
 
             JobOffer savedJobOffer = jobOfferRepository.save(jobOffer);
 
@@ -84,6 +139,7 @@ public class JobOfferServices {
             jobOffer.setForum(forum);
         }
 
+
         JobOffer updated = jobOfferRepository.save(jobOffer);
         logger.info("✅ Offre mise à jour avec succès: {}", updated);
         return updated;
@@ -94,4 +150,6 @@ public class JobOfferServices {
         jobOfferRepository.deleteById(id);
         logger.info("✅ Offre supprimée avec succès !");
     }
+
+
 }

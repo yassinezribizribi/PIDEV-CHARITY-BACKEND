@@ -1,4 +1,5 @@
 package tn.esprit.examen.nomPrenomClasseExamen.entities;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -27,8 +28,9 @@ public class Mission implements Serializable{
     private int volunteerCount;
     private MissionStatus status;
 
-    @ManyToMany(mappedBy="missions", cascade = CascadeType.ALL)
-    private Set<Association> associations;
+    @ManyToOne
+    @JsonIgnore // Prevent recursion here
+    Association associationMission;
 
     @ManyToOne
     Crisis crisis;

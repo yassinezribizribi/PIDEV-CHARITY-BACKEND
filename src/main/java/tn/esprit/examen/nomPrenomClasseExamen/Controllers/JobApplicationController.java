@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import tn.esprit.examen.nomPrenomClasseExamen.dto.JobApplicationDto;
@@ -50,6 +51,19 @@ public class JobApplicationController {
         logger.info("Fetched {} job applications for subscriber id: {}", applications.size(), subscriberId);
         return ResponseEntity.ok(applications);
     }
+    @GetMapping("/job-offers/applications")
+    public ResponseEntity<List<JobApplicationDto>> getApplicationsForUserJobOffers(
+            @RequestHeader("Authorization") String token) {
+        // Extract user ID from JWT Token
+        String jwtToken = token.replace("Bearer ", "");
+        Long userId = jwtUtils.getUserIdFromJwtToken(jwtToken);
+
+        logger.info("Fetching job applications for job offers posted by user ID: {}", userId);
+
+        List<JobApplicationDto> applications = jobApplicationService.getApplicationsForUserJobOffers(userId);
+
+        return ResponseEntity.ok(applications);
+    }
 
     @CrossOrigin(origins = "http://localhost:4200")  // Allow requests from your frontend's domain
     @PostMapping("/{jobOfferId}")
@@ -75,5 +89,46 @@ public class JobApplicationController {
         jobApplicationService.deleteJobApplication(id);
         logger.info("Job application with id: {} deleted", id);
         return ResponseEntity.noContent().build(); // 204 No Content
+    }
+
+    @GetMapping("/job-offer/{id}")
+    public ResponseEntity<List<JobApplicationDto>> getApplicationsForJobOffer(@PathVariable Long id) {
+        logger.info("Fetching job applications for job offer ID: {}", id);
+        List<JobApplicationDto> applications = jobApplicationService.getApplicationsForJobOffer(id);
+        logger.info("Fetched {} job applications for job offer ID: {}", applications.size(), id);
+        return ResponseEntity.ok(applications);
+    }
+
+    @PutMapping("/{id}/accept")
+    public ResponseEntity<JobApplicationDto> acceptApplication(
+            @PathVariable Long id,
+            @RequestHeader("Authorization") String token) {
+
+        // Verify token
+        String jwtToken = token.replace("Bearer ", "");
+        if (!jwtUtils.validateJwtToken(jwtToken)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        logger.info("Accepting job application with id: {}", id);
+        JobApplicationDto acceptedApplication = jobApplicationService.acceptApplication(id);
+        return ResponseEntity.ok(acceptedApplication);
+    }
+
+    @PutMapping("/{id}/reject")
+    public ResponseEntity<JobApplicationDto> rejectApplication(
+            @PathVariable Long id,
+            @RequestBody(required = false) String rejectionReason,
+            @RequestHeader("Authorization") String token) {
+
+        // Verify token
+        String jwtToken = token.replace("Bearer ", "");
+        if (!jwtUtils.validateJwtToken(jwtToken)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        logger.info("Rejecting job application with id: {} with reason: {}", id, rejectionReason);
+        JobApplicationDto rejectedApplication = jobApplicationService.rejectApplication(id, rejectionReason);
+        return ResponseEntity.ok(rejectedApplication);
     }
 }

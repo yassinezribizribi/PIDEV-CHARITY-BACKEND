@@ -12,6 +12,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import tn.esprit.examen.nomPrenomClasseExamen.dto.AssociationDto;
+import tn.esprit.examen.nomPrenomClasseExamen.dto.PartnershipImpactReportDto;
+import tn.esprit.examen.nomPrenomClasseExamen.dto.PartnershipTierDto;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Association;
 import tn.esprit.examen.nomPrenomClasseExamen.jwt.JwtUtils;
 import tn.esprit.examen.nomPrenomClasseExamen.services.AssociationServices;
@@ -22,10 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/associations")
@@ -34,7 +33,7 @@ public class AssociationController {
 
     private final AssociationServices associationServices;
     private final JwtUtils jwtUtils;
-    private static final String FILE_DIRECTORY = "C:\\Users\\hp\\Desktop\\uploads";
+    private static final String FILE_DIRECTORY = "C:\\Users\\user\\Desktop\\uploads";
     private static final Logger logger = LoggerFactory.getLogger(AssociationController.class);
 
     // File serving endpoint
@@ -225,4 +224,140 @@ public class AssociationController {
         String jwt = token.substring(7);
         return jwtUtils.validateJwtToken(jwt);
     }
+
+    // ============== PARTNERSHIP ENDPOINTS ==============
+
+    @PostMapping("/{id}/partners/{partnerId}")
+    public ResponseEntity<?> createPartnership(
+            @PathVariable Long id,
+            @PathVariable Long partnerId,
+            @RequestHeader("Authorization") String authHeader) {
+
+        try {
+            String token = authHeader.replace("Bearer ", "").trim();
+            AssociationDto updatedAssociation = associationServices.createPartnership(id, partnerId, token);
+
+            return ResponseEntity.ok().body(Map.of(
+                    "status", "success",
+                    "message", "Partnership established successfully",
+                    "association", updatedAssociation,
+                    "newPartnershipScore", updatedAssociation.getPartnershipScore(),
+                    "newTier", updatedAssociation.getPartnershipTier().getDisplayName()
+            ));
+
+        } catch (AssociationServices.UnauthorizedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        } catch (AssociationServices.BusinessException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (AssociationServices.ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error creating partnership: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/{id}/partners")
+    public ResponseEntity<?> getPartners(
+            @PathVariable Long id,
+            @RequestHeader(value = "Authorization", required = false) String token) {
+
+        try {
+            Set<AssociationDto> partners = associationServices.getPartners(id);
+            return ResponseEntity.ok(Map.of(
+                    "associationId", id,
+                    "partners", partners,
+                    "count", partners.size()
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/{id}/potential-partners")
+    public ResponseEntity<?> getPotentialPartners(
+            @PathVariable Long id,
+            @RequestHeader("Authorization") String token) {
+
+        if (!validateToken(token)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        try {
+            List<AssociationDto> potentialPartners = associationServices.getPotentialPartners(id);
+            return ResponseEntity.ok(Map.of(
+                    "associationId", id,
+                    "potentialPartners", potentialPartners,
+                    "count", potentialPartners.size()
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/{id}/partnership-tier")
+    public ResponseEntity<?> getPartnershipTier(
+            @PathVariable Long id,
+            @RequestHeader(value = "Authorization", required = false) String token) {
+
+        try {
+            PartnershipTierDto tierInfo = associationServices.getPartnershipTier(id);
+            return ResponseEntity.ok(tierInfo);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/{id}/partnership-impact")
+    public ResponseEntity<?> getPartnershipImpactReport(
+            @PathVariable Long id,
+            @RequestHeader("Authorization") String token) {
+
+        if (!validateToken(token)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        try {
+            PartnershipImpactReportDto impactReport = associationServices.generateImpactReport(id, token);
+            return ResponseEntity.ok(impactReport);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{id}/partners/{partnerId}")
+    public ResponseEntity<?> removePartnership(
+            @PathVariable Long id,
+            @PathVariable Long partnerId,
+            @RequestHeader("Authorization") String authHeader) {
+
+        try {
+            String token = authHeader.replace("Bearer ", "").trim();
+            associationServices.removePartnership(id, partnerId, token);
+
+            // Get updated association data
+            AssociationDto association = associationServices.getAssociationById(id)
+                    .orElseThrow(() -> new AssociationServices.ResourceNotFoundException("Association not found"));
+
+            return ResponseEntity.ok().body(Map.of(
+                    "status", "success",
+                    "message", "Partnership removed successfully",
+                    "associationId", id,
+                    "partnerId", partnerId,
+                    "newPartnershipScore", association.getPartnershipScore(),
+                    "newTier", association.getPartnershipTier().getDisplayName()
+            ));
+
+        } catch (AssociationServices.UnauthorizedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        } catch (AssociationServices.BusinessException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (AssociationServices.ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error removing partnership: " + e.getMessage());
+        }
+    }
+
+// ============== END PARTNERSHIP ENDPOINTS ==============
 }

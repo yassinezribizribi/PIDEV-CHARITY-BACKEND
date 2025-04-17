@@ -21,7 +21,7 @@ public class MissionDTO implements Serializable {
     private MissionStatus status;
 
     private Long crisisId;       // Stocker uniquement l'ID de Crisis
-    private Long associationId;  // Stocker uniquement l'ID de l'Association
+//    private Long associationId;  // Stocker uniquement l'ID de l'Association
 
     // 🔹 Convert DTO to Entity
     public Mission toMission() {
@@ -46,10 +46,10 @@ public class MissionDTO implements Serializable {
                 mission.getEndDate(),
                 mission.getVolunteerCount(),
                 mission.getStatus(),
-                mission.getCrisis() != null ? mission.getCrisis().getIdCrisis() : null,
-                mission.getAssociations() != null && !mission.getAssociations().isEmpty()
-                        ? mission.getAssociations().iterator().next().getIdAssociation()
-                        : null
+                mission.getCrisis() != null ? mission.getCrisis().getIdCrisis() : null
+//                mission.getAssociations() != null && !mission.getAssociations().isEmpty()
+//                        ? mission.getAssociations().iterator().next().getIdAssociation()
+//                        : null
         );
     }
 }

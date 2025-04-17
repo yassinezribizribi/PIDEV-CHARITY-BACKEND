@@ -89,8 +89,21 @@ public class AuthTokenFilter extends OncePerRequestFilter {
     }
 
     private boolean isPublicRoute(String uri, String method) {
+        // Only allow POST to /api/associations (create new association) without auth
         return uri.startsWith("/api/auth/") ||
-                (uri.startsWith("/api/associations") && "POST".equalsIgnoreCase(method));
+
+                (uri.equals("/api/associations") && "POST".equalsIgnoreCase(method))
+                ||
+                (uri.startsWith( "/api/donations/cagnotte") && "GET".equals(method)) ||
+
+                (uri.startsWith("/api/paiments/create-payment-intent") && "POST".equals(method)) ||
+                (uri.startsWith("/api/associations") && "POST".equals(method)) ||
+                (uri.startsWith("/api/donations/getall") && "GET".equals(method)) ||
+                (uri.startsWith("/api/donations/get/") && "GET".equals(method)) ||
+                (uri.startsWith("/api/donations/find/") && "GET".equals(method)) ||
+                (uri.startsWith("/api/dons/") && uri.endsWith("/contribute") && "POST".equals(method))
+
+                ;
     }
 
     private String parseJwt(HttpServletRequest request) {

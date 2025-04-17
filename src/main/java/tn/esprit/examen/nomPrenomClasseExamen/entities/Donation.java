@@ -28,29 +28,30 @@ public class Donation implements Serializable {
     private int quantiteDemandee; // Total amount needed (set by the association)
     private int quantiteDonnee ; // Total amount received (updated as donors contribute)
 
-    private Boolean availability;
+    //    private Boolean availability;
     private LocalDateTime lastUpdated;
     private DonationType donationType;
-    //    // 🔹 DONOR contributes to an existing donation
-//    private String nomDoneur;
-//    private String prenomDoneur;
-//    private Long numCompte;//visitor
-//    private int quantite ;
+
     private int quantiteExcedentaire ; // NEW: To track excess donations
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "donation")
     @JsonIgnore // Prevent recursion here
     private Set<Dons> dons;
+    @ManyToMany
+    @JoinTable(
+            name = "donation_subscriber",
+            joinColumns = @JoinColumn(name = "donation_id"),
+            inverseJoinColumns = @JoinColumn(name = "subscriber_id")
+    )
+    private Set<Subscriber> subscribers;
 
     @ManyToOne
     @JsonIgnore // Prevent recursion here
-
     Association associationDonation;
 
     @OneToOne(cascade = CascadeType.ALL)
     @JsonIgnore // Prevent recursion here
-
-    private CagnotteEnligne cagnotteenligne;
+    CagnotteEnligne cagnotteenligne;
     // 🔹 Update donation logic
     public void addDonation(int quantite) {
         int newTotal = this.quantiteDonnee + quantite;

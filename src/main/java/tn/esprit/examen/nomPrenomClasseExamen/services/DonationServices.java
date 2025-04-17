@@ -1,5 +1,7 @@
 package tn.esprit.examen.nomPrenomClasseExamen.services;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,7 +14,12 @@ import tn.esprit.examen.nomPrenomClasseExamen.entities.CagnotteEnligne;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Donation;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.DonationType;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Association;
+import tn.esprit.examen.nomPrenomClasseExamen.jwt.JwtUtils;
 
+import org.springframework.security.core.context.SecurityContextHolder;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -23,12 +30,58 @@ public class DonationServices {
     private final DonationRepository donationRepository;
     private final CagnotteEnligneRepository cagnotteRepository;
     private final AssociationRepository associationRepository;
+
+    private final JwtUtils jwtUtils; // Inject JwtUtils to extract the User ID from JWT
+
     private static final Logger logger = LoggerFactory.getLogger(DonationServices.class);
 
-    // Get all donations
-    public List<Donation> getAllDonations() {
-        return donationRepository.findAll();
+
+    // Fetch donations by association ID
+    public List<Donation> getDonationsByAssociationIdFromToken(String jwtToken) {
+        try {
+            if (jwtToken == null || jwtToken.trim().isEmpty()) {
+                throw new RuntimeException("JWT token cannot be null or empty");
+            }
+
+            // Extract the user ID from the JWT token
+            Long userId = jwtUtils.getUserIdFromJwtToken(jwtToken);
+            logger.info("🔍 User ID extracted from JWT: {}", userId);
+
+            // Find the association by the user ID
+            Association association = associationRepository.findBySubscriberIdUser(userId)
+                    .orElseThrow(() -> new RuntimeException("Association not found for user ID: " + userId));
+
+            // Fetch donations by association ID
+            return donationRepository.findByAssociationDonationIdAssociation(association.getIdAssociation());
+
+        } catch (Exception e) {
+            logger.error("❌ Error occurred while fetching donations: {}", e.getMessage(), e);
+            throw new RuntimeException("Error while fetching donations: " + e.getMessage());
+        }
     }
+    // Get all donations
+    public List<DonationDto> getAllDonations() {
+        List<Donation> donations = donationRepository.findAllWithCagnottes();
+        return donations.stream()
+                .map(DonationDto::fromDonation)
+                .collect(Collectors.toList());
+    }
+
+    public CagnotteEnligne getCagnotteEnLigneByDonationId(Long donationId) {
+        logger.info("🔍 Searching for CagnotteEnligne linked to Donation ID: {}", donationId);
+
+        Donation donation = donationRepository.findById(donationId)
+                .orElseThrow(() -> new RuntimeException("Donation with ID " + donationId + " not found"));
+
+        CagnotteEnligne cagnotte = donation.getCagnotteenligne();
+
+        if (cagnotte == null) {
+            throw new RuntimeException("No CagnotteEnligne found for Donation ID " + donationId);
+        }
+
+        return cagnotte;
+    }
+
 
     // Get donation by ID
     public Donation getDonationById(Long id) {
@@ -38,80 +91,119 @@ public class DonationServices {
     }
 
     // Create a new donation
-    // Create a new donation
-    public Donation createDonation(DonationDto donationDto) {
+    public Donation createDonation(DonationDto donationDto, String jwtToken) {
         try {
-            logger.info("📝 Creating a new donation: {}", donationDto);
+            if (jwtToken == null || jwtToken.trim().isEmpty()) {
+                throw new RuntimeException("JWT token cannot be null or empty");
+            }
+
+            // Extract User ID from JWT token
+            Long userId = jwtUtils.getUserIdFromJwtToken(jwtToken);
+            logger.info("🔍 User ID extracted from JWT: {}", userId);
+
+            // Now you can use the User ID to fetch the Association (if applicable)
+            Association association = associationRepository.findBySubscriberIdUser(userId)
+                    .orElseThrow(() -> new RuntimeException("Association not found for user ID: " + userId));
 
             // Convert DTO → Entity
             Donation donation = new Donation();
-
-            // Set attributes using the setter methods from the DTO
             donation.setTitre(donationDto.getTitre());
             donation.setDescription(donationDto.getDescription());
             donation.setQuantiteDemandee(donationDto.getQuantiteDemandee());
             donation.setQuantiteDonnee(donationDto.getQuantiteDonnee());
-            donation.setAvailability(donationDto.getAvailability());
             donation.setLastUpdated(donationDto.getLastUpdated());
             donation.setDonationType(donationDto.getDonationType());
-
-            // Fetch and set CagnotteEnligne
-            if (donationDto.getCagnotteId() != null) {
-                CagnotteEnligne cagnotte = cagnotteRepository.findById(donationDto.getCagnotteId())
-                        .orElseThrow(() -> new RuntimeException("Cagnotte not found with ID: " + donationDto.getCagnotteId()));
-                donation.setCagnotteenligne(cagnotte);
-            }
-
-            // Fetch and set Association
-            if (donationDto.getAssociationId() != null) {
-                Association association = associationRepository.findById(donationDto.getAssociationId())
-                        .orElseThrow(() -> new RuntimeException("Association not found with ID: " + donationDto.getAssociationId()));
-                donation.setAssociationDonation(association);
-            }
+            donation.setQuantiteExcedentaire(donationDto.getQuantiteExcedentaire());
+            donation.setAssociationDonation(association);  // Associate with the correct user’s association
+            donation.setCagnotteenligne(donationDto.getCagnotteenligne());
 
             // Save the donation
             Donation savedDonation = donationRepository.save(donation);
-
-            logger.info("✅ Donation successfully created: {}", savedDonation);
+            logger.info("✅ Donation successfully created with ID: {}", savedDonation.getIdDonation());
             return savedDonation;
+
         } catch (Exception e) {
-            logger.error("❌ Error while creating donation: {}", e.getMessage(), e);
+            logger.error("❌ Error occurred while creating donation: {}", e.getMessage(), e);
             throw new RuntimeException("Error while creating donation: " + e.getMessage());
         }
     }
 
     // Update an existing donation
-    public Donation updateDonation(Long id, DonationDto donationDto) {
-        logger.info("🔄 Updating donation with ID: {}", id);
-        Donation donation = getDonationById(id);
+    // Update an existing donation
+// Update an existing donation
+    @Transactional
+    public Donation updateDonation(Long id, DonationDto donationDto, String jwtToken) {
+        try {
+            logger.info("🔄 Updating donation with ID: {}", id);
 
-        // Update fields from DTO
-        donation.setTitre(donationDto.getTitre());
-        donation.setDescription(donationDto.getDescription());
-        donation.setQuantiteDemandee(donationDto.getQuantiteDemandee());
-        donation.setQuantiteDonnee(donationDto.getQuantiteDonnee());
-        donation.setAvailability(donationDto.getAvailability());
-        donation.setLastUpdated(donationDto.getLastUpdated());
-        donation.setDonationType(donationDto.getDonationType());
+            // 1. Fetch the existing donation with its cagnotte
+            Donation donation = donationRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Donation not found with ID: " + id));
 
-        // Fetch and update CagnotteEnligne
-        if (donationDto.getCagnotteId() != null) {
-            CagnotteEnligne cagnotte = cagnotteRepository.findById(donationDto.getCagnotteId())
-                    .orElseThrow(() -> new RuntimeException("Cagnotte not found with ID: " + donationDto.getCagnotteId()));
-            donation.setCagnotteenligne(cagnotte);
-        }
+            // 2. Update basic donation fields
+            donation.setTitre(donationDto.getTitre());
+            donation.setDescription(donationDto.getDescription());
+            donation.setQuantiteDemandee(donationDto.getQuantiteDemandee());
+            donation.setQuantiteDonnee(donationDto.getQuantiteDonnee());
+            donation.setLastUpdated(LocalDateTime.now()); // Always use current time for update
+            donation.setDonationType(donationDto.getDonationType());
+            donation.setQuantiteExcedentaire(donationDto.getQuantiteExcedentaire());
 
-        // Fetch and update Association
-        if (donationDto.getAssociationId() != null) {
-            Association association = associationRepository.findById(donationDto.getAssociationId())
-                    .orElseThrow(() -> new RuntimeException("Association not found with ID: " + donationDto.getAssociationId()));
+            // 3. Handle cagnotte update
+            if (donationDto.getCagnotteenligne() != null) {
+                CagnotteEnligne cagnotteDto = donationDto.getCagnotteenligne();
+
+                if (donation.getCagnotteenligne() != null) {
+                    // Update existing cagnotte
+                    CagnotteEnligne existingCagnotte = donation.getCagnotteenligne();
+                    existingCagnotte.setTitle(cagnotteDto.getTitle());
+                    existingCagnotte.setDescription(cagnotteDto.getDescription());
+                    existingCagnotte.setGoalAmount(cagnotteDto.getGoalAmount());
+                    existingCagnotte.setCurrentAmount(cagnotteDto.getCurrentAmount());
+                    // Update other fields as needed
+                } else {
+                    // Create new cagnotte if none exists
+                    CagnotteEnligne newCagnotte = new CagnotteEnligne();
+                    newCagnotte.setTitle(cagnotteDto.getTitle());
+                    newCagnotte.setDescription(cagnotteDto.getDescription());
+                    newCagnotte.setGoalAmount(cagnotteDto.getGoalAmount());
+                    newCagnotte.setCurrentAmount(cagnotteDto.getCurrentAmount());
+                    // Set other fields as needed
+
+                    // Set the relationship
+                    donation.setCagnotteenligne(newCagnotte);
+                    newCagnotte.setDonation(donation); // If you have bidirectional relationship
+                }
+            } else {
+                // If cagnotte is null in DTO, remove existing one
+                if (donation.getCagnotteenligne() != null) {
+                    CagnotteEnligne cagnotteToRemove = donation.getCagnotteenligne();
+                    donation.setCagnotteenligne(null);
+                    cagnotteRepository.delete(cagnotteToRemove); // Only if you want to delete it
+                }
+            }
+
+            // 4. Verify and set association
+            if (jwtToken == null || jwtToken.trim().isEmpty()) {
+                throw new RuntimeException("JWT token cannot be null or empty");
+            }
+            Long userId = jwtUtils.getUserIdFromJwtToken(jwtToken);
+            logger.info("🔍 User ID extracted from JWT: {}", userId);
+
+            Association association = associationRepository.findBySubscriberIdUser(userId)
+                    .orElseThrow(() -> new RuntimeException("Association not found for User ID: " + userId));
             donation.setAssociationDonation(association);
-        }
 
-        // Save the updated donation
-        Donation updatedDonation = donationRepository.save(donation);
-        logger.info("✅ Donation successfully updated: {}", updatedDonation);
-        return updatedDonation;
+            // 5. Save everything
+            Donation updatedDonation = donationRepository.save(donation);
+            logger.info("✅ Donation successfully updated with ID: {}", updatedDonation.getIdDonation());
+
+            return updatedDonation;
+
+        } catch (Exception e) {
+            logger.error("❌ Error occurred while updating donation: {}", e.getMessage(), e);
+            throw new RuntimeException("Error while updating donation: " + e.getMessage());
+        }
     }
 
     // Delete a donation
@@ -128,4 +220,6 @@ public class DonationServices {
                 .map(DonationDto::fromDonation)
                 .collect(Collectors.toList());
     }
+
+
 }

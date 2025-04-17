@@ -25,7 +25,7 @@ public class JobApplicationDto {
     @JsonManagedReference
     private Long jobOfferId;
     @JsonManagedReference
-    private Long applicantId;
+    private Subscriber applicant;
 
     // Méthode statique pour convertir une entité en DTO
     public static JobApplicationDto fromEntity(JobApplication jobApplication) {
@@ -34,7 +34,7 @@ public class JobApplicationDto {
                 jobApplication.getApplicationDate(),
                 jobApplication.getJobApplicationStatus(),
                 jobApplication.getJobOffer() != null ? jobApplication.getJobOffer().getIdJobOffer() : null,
-                jobApplication.getApplicant() != null ? jobApplication.getApplicant().getIdUser() : null
+                jobApplication.getApplicant() // Include the full Subscriber object
         );
     }
 
@@ -45,7 +45,7 @@ public class JobApplicationDto {
                 dto.getApplicationDate(),
                 dto.getJobApplicationStatus(),
                 jobOffer,
-                applicant
+                dto.getApplicant() // Include the full Subscriber object
         );
     }
 }

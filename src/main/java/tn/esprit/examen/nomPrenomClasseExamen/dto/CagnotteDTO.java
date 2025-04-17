@@ -6,6 +6,7 @@ import tn.esprit.examen.nomPrenomClasseExamen.entities.Paiement;
 
 import java.io.Serializable;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * DTO for {@link tn.esprit.examen.nomPrenomClasseExamen.entities.CagnotteEnligne}
@@ -19,9 +20,8 @@ public class CagnotteDTO implements Serializable {
     private String description;
     private float goalAmount;
     private float currentAmount;
-    private Set<Paiement> paiements; // Assuming you have a Set of Paiement in CagnotteEnligne
+    private Set<PaiementDTO> paiements;
 
-    // Convert DTO to Entity
     public CagnotteEnligne toCagnotteEnligne() {
         CagnotteEnligne cagnotteEnligne = new CagnotteEnligne();
         cagnotteEnligne.setIdCagnotte(this.idCagnotte);
@@ -29,19 +29,32 @@ public class CagnotteDTO implements Serializable {
         cagnotteEnligne.setDescription(this.description);
         cagnotteEnligne.setGoalAmount(this.goalAmount);
         cagnotteEnligne.setCurrentAmount(this.currentAmount);
-        cagnotteEnligne.setPaiements(this.paiements);
+
+        if (this.paiements != null) {
+            Set<Paiement> paiementsSet = this.paiements.stream()
+                    .map(PaiementDTO::toPaiement)
+                    .collect(Collectors.toSet());
+            cagnotteEnligne.setPaiements(paiementsSet);
+        }
+
         return cagnotteEnligne;
     }
 
-    // Convert Entity to DTO
     public static CagnotteDTO fromCagnotteEnligne(CagnotteEnligne cagnotteEnligne) {
+        Set<PaiementDTO> paiementsDTO = null;
+        if (cagnotteEnligne.getPaiements() != null) {
+            paiementsDTO = cagnotteEnligne.getPaiements().stream()
+                    .map(PaiementDTO::fromPaiement)
+                    .collect(Collectors.toSet());
+        }
+
         return new CagnotteDTO(
                 cagnotteEnligne.getIdCagnotte(),
                 cagnotteEnligne.getTitle(),
                 cagnotteEnligne.getDescription(),
                 cagnotteEnligne.getGoalAmount(),
                 cagnotteEnligne.getCurrentAmount(),
-                cagnotteEnligne.getPaiements()
+                paiementsDTO
         );
     }
 }

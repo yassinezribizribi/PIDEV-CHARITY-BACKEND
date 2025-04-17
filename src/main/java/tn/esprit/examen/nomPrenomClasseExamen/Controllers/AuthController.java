@@ -138,6 +138,20 @@ public class AuthController {
         log.info("✅ Utilisateur supprimé avec succès !");
         return ResponseEntity.ok(new MessageResponseDto("User deleted successfully!"));
     }
+    // 🔹 GET USER BY ID
+    @GetMapping("/user/{id}")
+    public ResponseEntity<?> getUserById(@PathVariable Long id) {
+        log.info("🔍 Fetching user details for ID: {}", id);
+
+        Optional<Subscriber> subscriberOpt = subscriberRepository.findById(id);
+        if (subscriberOpt.isEmpty()) {
+            log.warn("❌ User not found with ID: {}", id);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponseDto("User not found!"));
+        }
+
+        Subscriber subscriber = subscriberOpt.get();
+        return ResponseEntity.ok(subscriber);
+    }
 
     // 🔹 UPDATE USER
     @PutMapping("/update/{id}")
@@ -180,12 +194,33 @@ public class AuthController {
                         "Login credentials:\nEmail: %s\nPassword: %s\n\nBest regards,\nThe Team",
                 subscriber.getFirstName(),
                 subscriber.getEmail(),
-                plainPassword);
+                plainPassword
+        );
 
         if (subscriber.getEmail() == null || subscriber.getEmail().isEmpty()) {
             throw new IllegalArgumentException("Email is null or empty");
         }
 
-        emailService.sendEmail(subscriber.getEmail(), subject, body);
+        try {
+            emailService.sendEmail(subscriber.getEmail(), subject, body);
+        } catch (Exception e) {
+            log.warn("⚠️ Email non envoyé : {}", e.getMessage());
+        }
+    }
+
+
+    // 🔹 GET USER BY EMAIL
+    @GetMapping("/user/email/{email}")
+    public ResponseEntity<?> getUserByEmail(@PathVariable String email) {
+        log.info("🔍 Fetching user details for email: {}", email);
+
+        Optional<Subscriber> subscriberOpt = subscriberRepository.findByEmail(email);
+        if (subscriberOpt.isEmpty()) {
+            log.warn("❌ User not found with email: {}", email);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new MessageResponseDto("User not found!"));
+        }
+
+        return ResponseEntity.ok(subscriberOpt.get());
     }
 }

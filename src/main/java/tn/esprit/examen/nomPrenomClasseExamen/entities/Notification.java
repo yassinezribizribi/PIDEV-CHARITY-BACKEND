@@ -1,31 +1,33 @@
 package tn.esprit.examen.nomPrenomClasseExamen.entities;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.io.Serializable;
 import java.util.Date;
 
+@Entity
 @Getter
 @Setter
-@ToString
 @AllArgsConstructor
 @NoArgsConstructor
-@FieldDefaults(level= AccessLevel.PRIVATE)
-@Entity
-public class Notification implements Serializable {
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class Notification {
+
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)  // Permet l'auto-incrémentation
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    Long id;
 
-    private Long idNotification;
-    private String message;
-    private Date dateTime;
+    String message;
+
+    @Temporal(TemporalType.TIMESTAMP)
+    Date createdAt = new Date();
+
     @ManyToOne
-    @JsonBackReference
-    private Association association;
+    @JoinColumn(name = "association_id", nullable = true)
+    Association association;
 
-
-
+    @ManyToOne
+    @JoinColumn(name = "subscriber_id", nullable = false)
+    Subscriber subscriber;
 }

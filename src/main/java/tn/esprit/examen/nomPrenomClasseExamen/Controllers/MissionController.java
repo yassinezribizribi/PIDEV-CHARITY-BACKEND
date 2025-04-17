@@ -1,6 +1,9 @@
 package tn.esprit.examen.nomPrenomClasseExamen.Controllers;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,10 +22,30 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class MissionController {
     private final MissionServices missionServices;
-    //    @GetMapping("/by-location/{location}")
+    private static final Logger logger = LoggerFactory.getLogger(MissionController.class);
+
+//    @GetMapping("/by-location/{location}")
 //    public List<MissionDTO> getMissionsByLocation(@PathVariable String location) {
 //        return missionServices.getMissionsByLocation(location);
 //    }
+
+    @GetMapping("/my-missions")
+    public ResponseEntity<?> getMissionsByAssociationIdFromToken(HttpServletRequest request) {
+        try {
+            // Extract the JWT token from the request header
+            String jwtToken = request.getHeader("Authorization").substring(7);  // Remove "Bearer " prefix
+            logger.info("📝 Fetching missions for the association from the token");
+
+            // Call the service method to get the missions
+            List<Mission> missions = missionServices.getMissionsByAssociationIdFromToken(jwtToken);
+            return ResponseEntity.ok(missions);
+
+        } catch (Exception e) {
+            logger.error("❌ Error occurred while fetching missions for the association: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body("Error: " + e.getMessage());
+        }
+    }
+
     @GetMapping("/by-location/{location}")
     public List<MissionDTO> getMissionsByLocation(@PathVariable String location) {
         return missionServices.getMissionsByLocation(location);
@@ -47,12 +70,28 @@ public class MissionController {
     public ResponseEntity<MissionDTO> getMissionById(@PathVariable Long id) {
         return ResponseEntity.ok(MissionDTO.fromMission(missionServices.getMissionById(id)));
     }
+    @PostMapping("/create")
+    public ResponseEntity<?> createMission(@RequestBody MissionDTO missionDTO,
+                                           @RequestHeader("Authorization") String authorizationHeader) {
+        try {
+            // 🔐 Extract the token from the Authorization header
+            String jwtToken = authorizationHeader.startsWith("Bearer ") ? authorizationHeader.substring(7) : authorizationHeader;
 
-    @PostMapping("create")
-    public ResponseEntity<MissionDTO> createMission(@RequestBody MissionDTO missionDTO) {
-        MissionDTO createdMission = missionServices.createMission(missionDTO);
-        return ResponseEntity.status(201).body(createdMission);
+            logger.info("📝 POST request received to create a mission: {}", missionDTO);
+
+            // 👉 Call the service layer with token
+            MissionDTO createdMission = missionServices.createMission(missionDTO, jwtToken);
+
+            return ResponseEntity.ok(createdMission);
+        } catch (Exception e) {
+            logger.error("❌ Error occurred while creating mission: {}", e.getMessage(), e);
+
+            // 💬 Return a helpful error message
+            String errorMessage = e instanceof RuntimeException ? e.getMessage() : "Unexpected error occurred";
+            return ResponseEntity.internalServerError().body("Error: " + errorMessage);
+        }
     }
+
 
     @PutMapping("update/{id}")
     public ResponseEntity<MissionDTO> updateMission(@PathVariable Long id, @RequestBody MissionDTO updatedMissionDTO) {

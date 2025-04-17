@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Donation;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Dons;
+import tn.esprit.examen.nomPrenomClasseExamen.entities.DonsDeliveryMethod;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Subscriber;
 
 import java.io.Serializable;
@@ -19,9 +20,14 @@ public class DonsDTO implements Serializable {
     private String prenomDoneur;
     private int quantite;
     private LocalDateTime donationDate;
-    private Long donationId; // Store only the ID of the donation
-    private Long subscriberId; // Store only the ID of the subscriber
+    private LocalDateTime scheduledDateTime;
+    private boolean associationValidated;
+    private String donorNote;
+    private DonsDeliveryMethod deliveryMethod;
+    private String donorAddress; // Assuming you're keeping this as address for pick-up
 
+    private Long donationId; // Only the ID
+    private Long subscriberId;
     // 🔹 Convert DTO to Entity
     public Dons toDons() {
         Dons dons = new Dons();
@@ -30,7 +36,11 @@ public class DonsDTO implements Serializable {
         dons.setPrenomDoneur(this.prenomDoneur);
         dons.setQuantite(this.quantite);
         dons.setDonationDate(this.donationDate);
-
+        dons.setScheduledDateTime(this.scheduledDateTime);
+        dons.setAssociationValidated(this.associationValidated);
+        dons.setDonorNote(this.donorNote);
+        dons.setDeliveryMethod(this.deliveryMethod);
+        dons.setDonorAddress(this.donorAddress);
         if (this.donationId != null) {
             Donation donation = new Donation();
             donation.setIdDonation(this.donationId);
@@ -54,6 +64,11 @@ public class DonsDTO implements Serializable {
                 dons.getPrenomDoneur(),
                 dons.getQuantite(),
                 dons.getDonationDate(),
+                dons.getScheduledDateTime(),
+                dons.isAssociationValidated(),
+                dons.getDonorNote(),
+                dons.getDeliveryMethod(),
+                dons.getDonorAddress(),
                 dons.getDonation() != null ? dons.getDonation().getIdDonation() : null,
                 dons.getSubscriberDons() != null ? dons.getSubscriberDons().getIdUser() : null
         );

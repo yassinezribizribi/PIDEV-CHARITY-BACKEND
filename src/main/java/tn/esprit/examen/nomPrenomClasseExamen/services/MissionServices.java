@@ -4,11 +4,16 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import tn.esprit.examen.nomPrenomClasseExamen.Repositories.AssociationRepository;
+import tn.esprit.examen.nomPrenomClasseExamen.Repositories.CrisisRepository;
 import tn.esprit.examen.nomPrenomClasseExamen.Repositories.MissionRepository;
 import tn.esprit.examen.nomPrenomClasseExamen.Repositories.SubscriberRepository;
 import tn.esprit.examen.nomPrenomClasseExamen.dto.MissionDTO;
+import tn.esprit.examen.nomPrenomClasseExamen.entities.Association;
+import tn.esprit.examen.nomPrenomClasseExamen.entities.Crisis;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Mission;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Subscriber;
+import tn.esprit.examen.nomPrenomClasseExamen.jwt.JwtUtils;
 
 import java.util.Date;
 import java.util.List;
@@ -18,7 +23,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class MissionServices {
     private SubscriberRepository subscriberRepository;
-
+    private final JwtUtils jwtUtils; // Inject JwtUtils to extract the User ID from JWT
+    private final AssociationRepository associationRepository;
+    private final CrisisRepository crisisRepository;
     private final MissionRepository missionRepository;
     private static final Logger logger = LoggerFactory.getLogger(MissionServices.class);
     //    public List<MissionDTO> getMissionsByLocation(String location) {
@@ -34,6 +41,25 @@ public class MissionServices {
                 .collect(Collectors.toList());
     }
 
+    public List<Mission> getMissionsByAssociationIdFromToken(String jwtToken) {
+        try {
+            if (jwtToken == null || jwtToken.trim().isEmpty()) {
+                throw new RuntimeException("JWT token cannot be null or empty");
+            }
+
+            Long userId = jwtUtils.getUserIdFromJwtToken(jwtToken);
+            logger.info("🔍 User ID extracted from JWT: {}", userId);
+
+            Association association = associationRepository.findBySubscriberIdUser(userId)
+                    .orElseThrow(() -> new RuntimeException("Association not found for user ID: " + userId));
+
+            return missionRepository.findByAssociationMissionIdAssociation(association.getIdAssociation());
+
+        } catch (Exception e) {
+            logger.error("❌ Error occurred while fetching missions: {}", e.getMessage(), e);
+            throw new RuntimeException("Error while fetching missions: " + e.getMessage());
+        }
+    }
 
     public List<MissionDTO> findMissionByStartDate(String startDate) {
         logger.info("🔍 Searching for missions with start date: {}", startDate);
@@ -56,41 +82,44 @@ public class MissionServices {
                 .orElseThrow(() -> new RuntimeException("Mission with ID " + id + " not found"));
     }
 
-    public MissionDTO createMission(MissionDTO missionDTO) {
+    public MissionDTO createMission(MissionDTO missionDTO, String jwtToken) {
         try {
-            logger.info("📝 Creating a new mission: {}", missionDTO);
+            if (jwtToken == null || jwtToken.trim().isEmpty()) {
+                throw new RuntimeException("JWT token cannot be null or empty");
+            }
 
-            // Create new Mission entity
+            // 1️⃣ Extract user ID from JWT
+            Long userId = jwtUtils.getUserIdFromJwtToken(jwtToken);
+            logger.info("🔐 User ID extracted from JWT: {}", userId);
+
+            // 2️⃣ Retrieve the association linked to this user
+            Association association = associationRepository.findBySubscriberIdUser(userId)
+                    .orElseThrow(() -> new RuntimeException("Association not found for user ID: " + userId));
+
+            // 3️⃣ Map DTO → Entity
             Mission mission = new Mission();
-
-            // Set each attribute from MissionDTO to Mission entity using setters
             mission.setDescription(missionDTO.getDescription());
             mission.setLocation(missionDTO.getLocation());
             mission.setStartDate(missionDTO.getStartDate());
             mission.setEndDate(missionDTO.getEndDate());
             mission.setVolunteerCount(missionDTO.getVolunteerCount());
             mission.setStatus(missionDTO.getStatus());
+            mission.setAssociationMission(association); // 🔗 Link the association
 
-//            // Handle Crisis and Association relations
-//            if (missionDTO.getCrisisId() != null) {
-//                Crisis crisis = crisisRepository.findById(missionDTO.getCrisisId())
-//                        .orElseThrow(() -> new RuntimeException("Crisis not found with ID: " + missionDTO.getCrisisId()));
-//                mission.setCrisis(crisis);
-//            }
-//
-//            if (missionDTO.getAssociationId() != null) {
-//                Association association = associationRepository.findById(missionDTO.getAssociationId())
-//                        .orElseThrow(() -> new RuntimeException("Association not found with ID: " + missionDTO.getAssociationId()));
-//                mission.setAssociations(Collections.singleton(association));
-//            }
+            // Optional: handle crisis if included in DTO
+            if (missionDTO.getCrisisId() != null) {
+                Crisis crisis = crisisRepository.findById(missionDTO.getCrisisId())
+                        .orElseThrow(() -> new RuntimeException("Crisis not found with ID: " + missionDTO.getCrisisId()));
+                mission.setCrisis(crisis);
+            }
 
-            // Save the mission
+            // 4️⃣ Save
             Mission savedMission = missionRepository.save(mission);
+            logger.info("✅ Mission created successfully with ID: {}", savedMission.getIdMission());
 
-            logger.info("✅ Mission created successfully: {}", savedMission);
-
-            // Convert the saved Mission entity back to DTO and return
+            // 5️⃣ Convert back to DTO and return
             return MissionDTO.fromMission(savedMission);
+
         } catch (Exception e) {
             logger.error("❌ Error while creating mission: {}", e.getMessage(), e);
             throw new RuntimeException("Error while creating mission: " + e.getMessage());

@@ -1,11 +1,11 @@
 package tn.esprit.examen.nomPrenomClasseExamen.entities;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.*;
 import jakarta.persistence.*;
 import lombok.*;
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -56,9 +56,9 @@ public class Association implements Serializable {
     @ManyToMany(cascade = CascadeType.ALL)
     @JsonManagedReference
     private Set<Subscription> subscriptions;
+    @OneToMany(cascade = CascadeType.ALL, mappedBy="associationMission")
+    @JsonIgnore // Prevent recursion here
 
-    @ManyToMany(cascade = CascadeType.ALL)
-    @JsonManagedReference
     private Set<Mission> missions;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "association")
@@ -68,4 +68,111 @@ public class Association implements Serializable {
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "association")
     @JsonManagedReference
     private Set<Notification> notifications;
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinTable(
+            name = "association_partnerships",
+            joinColumns = @JoinColumn(name = "association_id"),
+            inverseJoinColumns = @JoinColumn(name = "partner_id")
+    )
+    private Set<Association> partners = new HashSet<>();
+
+    @Column(name = "partnership_score")
+    private Integer partnershipScore = 0;
+
+    public void addPartner(Association partner) {
+        this.partners.add(partner);
+        partner.getPartners().add(this);
+        updatePartnershipScore();
+        partner.updatePartnershipScore();
+    }
+
+    public void removePartner(Association partner) {
+        this.partners.remove(partner);
+        partner.getPartners().remove(this);
+        updatePartnershipScore();
+        partner.updatePartnershipScore();
+    }
+
+    private void updatePartnershipScore() {
+        this.partnershipScore = calculatePartnershipScore();
+    }
+
+    private int calculatePartnershipScore() {
+        int baseScore = this.partners.size() * 5;
+        int jointProjectsScore = 0; // No joint project logic since a mission belongs to one association
+        return Math.min(baseScore + jointProjectsScore, 100);
+    }
+
+
+    // Add this method to get the partnership tier
+    public PartnershipTier getPartnershipTier() {
+        return PartnershipTier.determineTier(this.partnershipScore);
+    }
+
+    // Add this method to get progress to next tier
+    public int getProgressToNextTier() {
+        PartnershipTier currentTier = getPartnershipTier();
+        if (currentTier == PartnershipTier.GOLD) {
+            return 100; // Already at highest tier
+        }
+        int range = currentTier.maxScore - currentTier.minScore;
+        int progress = partnershipScore - currentTier.minScore;
+        return (int) ((progress / (double) range) * 100);
+    }
+
+    // Enhanced partnership tier enum
+    public enum PartnershipTier {
+        BRONZE("Bronze", 0, 30, 3),
+        SILVER("Silver", 31, 60, 8),
+        GOLD("Gold", 61, 100, 15);
+
+        private final String displayName;
+        private final int minScore;
+        private final int maxScore;
+        private final int maxPartners;
+
+        PartnershipTier(String displayName, int minScore, int maxScore, int maxPartners) {
+            this.displayName = displayName;
+            this.minScore = minScore;
+            this.maxScore = maxScore;
+            this.maxPartners = maxPartners;
+        }
+
+        // Add getter methods for all fields
+        public String getDisplayName() {
+            return displayName;
+        }
+
+        public int getMinScore() {
+            return minScore;
+        }
+
+        public int getMaxScore() {
+            return maxScore;
+        }
+
+        public int getMaxPartners() {
+            return maxPartners;
+        }
+
+        public int getNextTierThreshold() {
+            return this == GOLD ? Integer.MAX_VALUE : values()[ordinal() + 1].minScore;
+        }
+
+        public static PartnershipTier determineTier(int score) {
+            for (PartnershipTier tier : values()) {
+                if (score >= tier.minScore && score <= tier.maxScore) {
+                    return tier;
+                }
+            }
+            return BRONZE;
+        }
+
+        public boolean canAddMorePartners(int currentPartners) {
+            return currentPartners < maxPartners;
+        }
+    }
+
+
+
 }

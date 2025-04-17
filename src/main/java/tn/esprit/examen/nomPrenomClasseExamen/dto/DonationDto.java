@@ -4,6 +4,7 @@ import lombok.*;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.*;
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import tn.esprit.examen.nomPrenomClasseExamen.dto.CagnotteDTO;
 
 @Data
 @NoArgsConstructor
@@ -15,13 +16,12 @@ public class DonationDto implements Serializable {
     private String description;
     private int quantiteDemandee;
     private int quantiteDonnee;
-    private Boolean availability;
+    //    private Boolean availability;
     private LocalDateTime lastUpdated;
     private DonationType donationType;
     private int quantiteExcedentaire;
 
-    private Long cagnotteId; // Only include the ID of the cagnotte
-    private Long associationId; // Only include the ID of the association
+    private CagnotteEnligne cagnotteenligne;
 
     // 🔹 Convert DTO to Entity
     public Donation toDonation() {
@@ -31,12 +31,13 @@ public class DonationDto implements Serializable {
         donation.setDescription(this.description);
         donation.setQuantiteDemandee(this.quantiteDemandee);
         donation.setQuantiteDonnee(this.quantiteDonnee);
-        donation.setAvailability(this.availability);
+//        donation.setAvailability(this.availability);
         donation.setLastUpdated(this.lastUpdated);
         donation.setDonationType(this.donationType);
         donation.setQuantiteExcedentaire(this.quantiteExcedentaire);
+        donation.setCagnotteenligne(this.cagnotteenligne);
 
-        // Handle cagnotte and association in the service layer
+        // Association will be handled in the service based on the user from the token
         return donation;
     }
 
@@ -48,12 +49,11 @@ public class DonationDto implements Serializable {
                 donation.getDescription(),
                 donation.getQuantiteDemandee(),
                 donation.getQuantiteDonnee(),
-                donation.getAvailability(),
+//                donation.getAvailability(),
                 donation.getLastUpdated(),
                 donation.getDonationType(),
                 donation.getQuantiteExcedentaire(),
-                donation.getCagnotteenligne() != null ? donation.getCagnotteenligne().getIdCagnotte() : null,
-                donation.getAssociationDonation() != null ? donation.getAssociationDonation().getIdAssociation() : null
+                donation.getCagnotteenligne()
         );
     }
 }

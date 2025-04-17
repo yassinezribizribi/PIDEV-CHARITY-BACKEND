@@ -37,7 +37,7 @@ public class RequestController {
         return ResponseEntity.ok(requestService.getRequestById(id));
     }
 
-    @PostMapping("/{requestId}/responses")
+    @PostMapping("/responses/{requestId}")
     public ResponseEntity<?> addResponseToRequest(
             @PathVariable Long requestId,
             @RequestBody ResponseDto responseDto
@@ -67,5 +67,22 @@ public class RequestController {
         logger.info("🗑 Requête DELETE reçue pour supprimer la demande avec ID: {}", id);
         requestService.deleteRequest(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/add")
+    public ResponseEntity<Request> createRequest(@RequestBody RequestDTO requestDTO) {
+        try {
+            logger.info("📝 Requête reçue pour créer une nouvelle demande: {}", requestDTO);
+            Request savedRequest = requestService.createRequest(requestDTO);
+            return ResponseEntity.ok(savedRequest);
+        } catch (Exception e) {
+            logger.error("❌ Erreur lors de la création de la demande: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest().body(null);
+        }
+    }
+    @GetMapping("/requests-with-responses")
+    public ResponseEntity<List<Request>> getAllRequestsWithResponses() {
+        List<Request> requests = requestService.getAllRequestsWithResponses();
+        return ResponseEntity.ok(requests);
     }
 }

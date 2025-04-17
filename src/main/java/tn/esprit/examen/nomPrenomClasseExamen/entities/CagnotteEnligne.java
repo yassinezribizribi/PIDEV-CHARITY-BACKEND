@@ -27,12 +27,11 @@ public class CagnotteEnligne implements Serializable {
 
     @OneToOne(mappedBy="cagnotteenligne",cascade = CascadeType.ALL)
     @JsonIgnore // Prevent recursion here
-
     private Donation donation;
 
 
-    @OneToMany(cascade = CascadeType.ALL)
-    @JsonIgnore // Prevent recursion here
+    @OneToMany(mappedBy = "cagnotte", cascade = CascadeType.ALL)
+    @JsonIgnore
+    private Set<Paiement> paiements;
 
-    private Set<Paiement> Paiements;
 }
