@@ -24,11 +24,23 @@ public class Crisis implements Serializable {
     @Temporal(TemporalType.TIMESTAMP)
     private Date crisisDate;
 
+    private Double latitude;
+    private Double longitude;
+    private String image;
+
+
+    @Enumerated(EnumType.STRING)
+    private CrisisSeverity severity;
+
+    @Enumerated(EnumType.STRING)
+    private CrisisStatus status;
+
     @OneToMany(cascade = CascadeType.ALL, mappedBy="crisis")
     private Set<Mission> missions;
 
 
     @ManyToOne
+    @JoinColumn(name = "subscriber_id")
     private Subscriber subscriber;  // L'utilisateur qui a signalé la crise
 
 

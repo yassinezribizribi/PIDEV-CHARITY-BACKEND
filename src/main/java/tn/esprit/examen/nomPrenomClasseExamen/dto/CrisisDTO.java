@@ -5,7 +5,10 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.web.multipart.MultipartFile;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Categorie;
+import tn.esprit.examen.nomPrenomClasseExamen.entities.CrisisSeverity;
+import tn.esprit.examen.nomPrenomClasseExamen.entities.CrisisStatus;
 
 import java.util.Date;
 @Getter
@@ -20,6 +23,14 @@ public class CrisisDTO {
     private String description;
     private Date crisisDate;
     private Long idUser;
+    private Double latitude;
+    private Double longitude;
+   private CrisisSeverity severity;
+ private MultipartFile  image;
+
+
+
+
 
 
 

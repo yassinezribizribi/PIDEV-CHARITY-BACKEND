@@ -112,5 +112,10 @@ public class RequestService {
         return responseRepository.save(response);
     }
 
+    public List<Request> getAllRequestsWithResponses() {
+        return requestRepository.findAll(); // assure-toi que les réponses sont chargées
+    }
+
+
 }
 

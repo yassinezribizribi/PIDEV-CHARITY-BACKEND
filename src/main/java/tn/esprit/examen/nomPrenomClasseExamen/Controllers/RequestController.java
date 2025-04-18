@@ -80,4 +80,9 @@ public class RequestController {
             return ResponseEntity.badRequest().body(null);
         }
     }
+    @GetMapping("/requests-with-responses")
+    public ResponseEntity<List<Request>> getAllRequestsWithResponses() {
+        List<Request> requests = requestService.getAllRequestsWithResponses();
+        return ResponseEntity.ok(requests);
+    }
 }
