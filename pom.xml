@@ -100,6 +100,7 @@
                 <artifactId>spring-boot-starter-test</artifactId>
                 <scope>test</scope>
             </dependency>
+
             <dependency>
                 <groupId>org.springframework.security</groupId>
                 <artifactId>spring-security-test</artifactId>
@@ -124,20 +125,18 @@
                 <artifactId>json</artifactId>
                 <version>20231013</version>
             </dependency>
+
+            <dependency>
+                <groupId>com.twilio.sdk</groupId>
+                <artifactId>twilio</artifactId>
+                <version>8.8.0</version>
+            </dependency>
+
+
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter-web</artifactId>
             </dependency>
-
-
-
-
-
-
-
-
-
-
 
         </dependencies>
 

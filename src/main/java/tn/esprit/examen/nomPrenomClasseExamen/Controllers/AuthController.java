@@ -112,6 +112,7 @@ public class AuthController {
             subscriber.setRole(role);
             subscriber.setJob(signUpRequest.getJob());
             subscriber.setTelephone(signUpRequest.getTelephone());
+            subscriber.setLocation(signUpRequest.getLocation());
 
             subscriberRepository.save(subscriber);
             sendWelcomeEmail(subscriber, signUpRequest.getPassword());

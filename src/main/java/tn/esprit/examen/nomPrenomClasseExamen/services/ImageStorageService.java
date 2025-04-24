@@ -4,45 +4,26 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.*;
-import java.util.UUID;
+import java.util.Base64;
 
 @Service
 public class ImageStorageService {
 
-    private final Path rootLocation = Paths.get("src/main/resources/static/images");
-
-    public String storeImage(MultipartFile file) {
+    // La méthode qui convertit l'image en Base64
+    public String encodeImageToBase64(MultipartFile file) {
         try {
             if (file.isEmpty()) {
                 throw new IllegalArgumentException("Le fichier est vide");
             }
 
-            // Crée le dossier s’il n’existe pas
-            if (!Files.exists(rootLocation)) {
-                Files.createDirectories(rootLocation);
-            }
+            // Convertir l'image en tableau d'octets
+            byte[] bytes = file.getBytes();
 
-            // Génère un nom unique pour l’image
-            String originalExtension = getFileExtension(file.getOriginalFilename());
-            String uniqueFileName = UUID.randomUUID().toString() + "." + originalExtension;
+            // Convertir le tableau d'octets en une chaîne Base64
+            return Base64.getEncoder().encodeToString(bytes);
 
-            Path destinationFile = rootLocation.resolve(uniqueFileName).normalize().toAbsolutePath();
-
-            Files.copy(file.getInputStream(), destinationFile, StandardCopyOption.REPLACE_EXISTING);
-
-            // Retourne le chemin relatif de l’image
-            return "/images/" + uniqueFileName;
         } catch (IOException e) {
-            throw new RuntimeException("Impossible de stocker l'image", e);
-        }
-    }
-
-    private String getFileExtension(String fileName) {
-        if (fileName != null && fileName.contains(".")) {
-            return fileName.substring(fileName.lastIndexOf(".") + 1);
-        } else {
-            return "jpg"; // par défaut
+            throw new RuntimeException("Impossible de convertir l'image en Base64", e);
         }
     }
 }

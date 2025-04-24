@@ -27,6 +27,8 @@ public class CrisisDTO {
     private Double longitude;
    private CrisisSeverity severity;
  private MultipartFile  image;
+ private String imageUrl;
+
 
 
 

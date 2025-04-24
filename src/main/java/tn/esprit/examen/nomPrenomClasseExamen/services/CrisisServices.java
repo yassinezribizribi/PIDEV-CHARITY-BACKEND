@@ -2,15 +2,18 @@ package tn.esprit.examen.nomPrenomClasseExamen.services;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import tn.esprit.examen.nomPrenomClasseExamen.Repositories.CrisisRepository;
 import tn.esprit.examen.nomPrenomClasseExamen.Repositories.SubscriberRepository;
+import tn.esprit.examen.nomPrenomClasseExamen.Repositories.UserRepository;
 import tn.esprit.examen.nomPrenomClasseExamen.dto.CrisisDTO;
-import tn.esprit.examen.nomPrenomClasseExamen.entities.Crisis;
-import tn.esprit.examen.nomPrenomClasseExamen.entities.CrisisSeverity;
-import tn.esprit.examen.nomPrenomClasseExamen.entities.CrisisStatus;
-import tn.esprit.examen.nomPrenomClasseExamen.entities.Subscriber;
+import tn.esprit.examen.nomPrenomClasseExamen.entities.*;
+
+import java.time.Instant;
+import java.util.Date;
 
 import java.util.List;
 import java.util.Optional;
@@ -18,6 +21,7 @@ import java.util.Optional;
 @Service
 @Slf4j
 @AllArgsConstructor
+
 public class CrisisServices implements ICrisisServices {
 
     private final CrisisRepository crisisRepository;
@@ -25,6 +29,8 @@ public class CrisisServices implements ICrisisServices {
     private final NominatimService nominatimService;
     private final ImageStorageService imageStorageService; // 🔥 Ajout de ce service pour gérer les images
 
+    private final SmsService smsService;
+    private final UserRepository userRepository;
     @Override
     public Crisis addCrisis(CrisisDTO crisisDTO) {
         if (crisisDTO == null) {
@@ -39,12 +45,12 @@ public class CrisisServices implements ICrisisServices {
         crisis.setCrisisDate(crisisDTO.getCrisisDate());
         crisis.setSeverity(crisisDTO.getSeverity());
 
-        // Associer l'utilisateur (subscriber)
+        // Associer l'utilisateur
         Subscriber subscriber = subscriberRepository.findById(crisisDTO.getIdUser())
                 .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouvé avec l'ID : " + crisisDTO.getIdUser()));
         crisis.setSubscriber(subscriber);
 
-        // Géocodage de l'adresse via OpenStreetMap (Nominatim)
+        // Géocodage via Nominatim
         Double[] coords = nominatimService.getCoordinatesFromAddress(crisisDTO.getLocation());
         if (coords != null) {
             crisis.setLatitude(coords[0]);
@@ -53,19 +59,28 @@ public class CrisisServices implements ICrisisServices {
             log.warn("Impossible de géocoder l'adresse : " + crisisDTO.getLocation());
         }
 
-        // 📸 Gestion de l'image
-        if (crisisDTO.getImage() != null && !crisisDTO.getImage().isEmpty()) {
+        // Gestion de l'image
+        MultipartFile imageFile = crisisDTO.getImage();
+        if (imageFile != null && !imageFile.isEmpty()) {
             try {
-                String imagePath = imageStorageService.storeImage(crisisDTO.getImage());
-                crisis.setImage(imagePath);
+                String base64Image = imageStorageService.encodeImageToBase64(imageFile);
+                crisis.setImage(base64Image);
             } catch (Exception e) {
-                log.error("Erreur lors du stockage de l'image", e);
-                crisis.setImage(null); // ou définir une image par défaut
+                log.error("Erreur lors de la conversion de l'image en Base64", e);
+                crisis.setImage(null);
             }
         }
 
-        return crisisRepository.save(crisis);
+        // ✅ Sauvegarde de la crise
+        Crisis savedCrisis = crisisRepository.save(crisis);
+
+        // ✅ Envoi de SMS si besoin
+        handleNewCrisis(savedCrisis);
+
+        return savedCrisis;
     }
+
+
 
     @Override
     public Crisis updateCrisis(Long id, Crisis updatedCrisis) {
@@ -122,8 +137,52 @@ public class CrisisServices implements ICrisisServices {
         return crisisRepository.findBySeverity(severity);
     }
 
+
+
+    @Override
+    public Crisis updateCrisisStatus(Long id, CrisisStatus status) {
+        Crisis crisis = crisisRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Crisis not found with id: " + id));
+        crisis.setStatus(status);
+        return crisisRepository.save(crisis);
+    }
+
     @Override
     public Crisis addCrisisWithImage(CrisisDTO crisisDTO, MultipartFile file) {
-        return null;
+        crisisDTO.setImage(file);
+        return addCrisis(crisisDTO); // ✅ Reuse your existing logic
+    }
+
+
+
+
+    @Scheduled(cron = "0 0 * * * *") // toutes les heures
+    public void autoExpireOldPendingCrises() {
+        Date twentyFourHoursAgo = Date.from(Instant.now().minusSeconds(24 * 3600));
+
+        List<Crisis> oldPendingCrises = crisisRepository.findAll().stream()
+                .filter(crisis -> crisis.getStatus() == CrisisStatus.PENDING
+                        && crisis.getCrisisDate().before(twentyFourHoursAgo))
+                .toList();
+
+        for (Crisis crisis : oldPendingCrises) {
+            crisis.setStatus(CrisisStatus.EXPIRED); // statut métier à définir dans l'enum si besoin
+            crisisRepository.save(crisis);
+        }
+
+        log.info("Crises expirées automatiquement : " + oldPendingCrises.size());
+    }
+
+    public void handleNewCrisis(Crisis crisis) {
+        if (crisis.getSeverity().equals(CrisisSeverity.HIGH)) {
+            // Filter users by location
+            List<User> targetUsers = userRepository.findByLocation(crisis.getLocation());
+
+            // Send SMS to users in that location
+            for (User user : targetUsers) {
+                smsService.sendSms(user.getTelephone(),
+                        "🚨 Attention, une crise HIGH a été signalée à " + crisis.getLocation() + ". Restez vigilant !");
+            }
+        }
     }
 }

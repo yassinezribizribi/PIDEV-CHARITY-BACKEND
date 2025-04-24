@@ -17,6 +17,7 @@ public class Crisis implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
      private Long idCrisis;
+    @Enumerated(EnumType.STRING) // au lieu de ORDINAL (valeur par défaut)
     private Categorie categorie;
     private String location;
     private String updates;

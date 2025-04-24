@@ -25,6 +25,7 @@ public class UserDataDTO {
   private Boolean isBanned;
   private String banreason;
   private String job;
+  private String location;
 
 
 

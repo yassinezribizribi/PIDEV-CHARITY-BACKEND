@@ -7,9 +7,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import tn.esprit.examen.nomPrenomClasseExamen.Repositories.SubscriberRepository;
+import tn.esprit.examen.nomPrenomClasseExamen.Repositories.UserRepository;
 import tn.esprit.examen.nomPrenomClasseExamen.dto.CrisisDTO;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.*;
 import tn.esprit.examen.nomPrenomClasseExamen.services.ICrisisServices;
+import tn.esprit.examen.nomPrenomClasseExamen.services.SmsService;
 
 import java.security.Principal;
 import java.util.Arrays;
@@ -26,6 +28,9 @@ public class CrisisController {
 
     private final ICrisisServices crisisService;
     private final SubscriberRepository subscriberRepository;
+    private final SmsService smsService;
+    private final UserRepository userRepository;
+
 
     // ✅ Nouvelle méthode unique pour ajouter une crise avec ou sans image
     @PostMapping("/add")
@@ -47,6 +52,8 @@ public class CrisisController {
         Crisis crisis = (file != null)
                 ? crisisService.addCrisisWithImage(crisisDTO, file)
                 : crisisService.addCrisis(crisisDTO);
+
+
 
         return ResponseEntity.status(HttpStatus.CREATED).body(crisis);
     }
@@ -114,5 +121,15 @@ public class CrisisController {
         return Arrays.stream(Categorie.values())
                 .map(Enum::name)
                 .collect(Collectors.toList());
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<Crisis> updateCrisisStatus(@PathVariable Long id, @RequestParam CrisisStatus status) {
+        try {
+            Crisis updatedCrisis = crisisService.updateCrisisStatus(id, status);
+            return ResponseEntity.ok(updatedCrisis);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 }

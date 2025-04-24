@@ -14,6 +14,7 @@ public interface ICrisisServices {
 
     public Crisis addCrisis(CrisisDTO crisisDTO);
 
+    Crisis addCrisisWithImage(CrisisDTO crisisDTO, MultipartFile file);
 
     Crisis updateCrisis(Long id, Crisis crisis);
     void deleteCrisis(Long id);
@@ -22,7 +23,10 @@ public interface ICrisisServices {
     List<Crisis> getCrisesBySubscriber(Long idUser);
     List<Crisis> getCrisesByStatus(CrisisStatus status);
     List<Crisis> getCrisesBySeverity(CrisisSeverity severity);
-    Crisis addCrisisWithImage(CrisisDTO crisisDTO, MultipartFile file);
+
+
+    Crisis updateCrisisStatus(Long id, CrisisStatus status);
+    void handleNewCrisis(Crisis crisis);
 
 
 }
