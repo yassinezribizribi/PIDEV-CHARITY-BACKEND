@@ -175,14 +175,19 @@ public class CrisisServices implements ICrisisServices {
 
     public void handleNewCrisis(Crisis crisis) {
         if (crisis.getSeverity().equals(CrisisSeverity.HIGH)) {
-            // Filter users by location
             List<User> targetUsers = userRepository.findByLocation(crisis.getLocation());
 
-            // Send SMS to users in that location
             for (User user : targetUsers) {
-                smsService.sendSms(user.getTelephone(),
-                        "🚨 Attention, une crise HIGH a été signalée à " + crisis.getLocation() + ". Restez vigilant !");
+                try {
+                    smsService.sendSms(user.getTelephone(),
+                            "🚨 Attention, une crise HIGH de categorie " + crisis.getCategorie()+" a été signalée à " + crisis.getLocation() + ". Restez vigilant !");
+                } catch (Exception e) {
+                    log.error("Erreur lors de l'envoi du SMS à l'utilisateur avec le téléphone : " + user.getTelephone(), e);
+                    // Continue sending to others even if one fails
+                }
             }
         }
     }
+
 }
+
