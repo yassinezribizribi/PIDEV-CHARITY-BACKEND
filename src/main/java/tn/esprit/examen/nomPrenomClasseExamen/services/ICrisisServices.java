@@ -27,6 +27,9 @@ public interface ICrisisServices {
 
     Crisis updateCrisisStatus(Long id, CrisisStatus status);
     void handleNewCrisis(Crisis crisis);
+    void analyzeAndNotifyUsersByCity();
+    Crisis assignCrisisToAssociation(Crisis crisis);
+
 
 
 }

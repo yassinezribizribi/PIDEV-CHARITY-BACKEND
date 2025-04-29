@@ -36,6 +36,10 @@ public class Crisis implements Serializable {
     @Enumerated(EnumType.STRING)
     private CrisisStatus status;
 
+    @ManyToOne
+    private Association assignedAssociation;
+
+
     @OneToMany(cascade = CascadeType.ALL, mappedBy="crisis")
     private Set<Mission> missions;
 

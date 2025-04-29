@@ -132,4 +132,11 @@ public class CrisisController {
             return ResponseEntity.notFound().build();
         }
     }
+
+    @GetMapping("/notify-crisis-alerts")
+    public ResponseEntity<?> notifyCrisisAlerts() {
+        crisisService.analyzeAndNotifyUsersByCity();
+        return ResponseEntity.ok("Alerts sent successfully!");
+    }
+
 }

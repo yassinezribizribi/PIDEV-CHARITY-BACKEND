@@ -1,41 +1,65 @@
 package tn.esprit.examen.nomPrenomClasseExamen.entities;
+
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.FieldDefaults;
-
 import java.io.Serializable;
+import java.util.HashSet;
 import java.util.Set;
 
+@Entity
 @Getter
 @Setter
-@ToString
-@AllArgsConstructor
 @NoArgsConstructor
-@FieldDefaults(level= AccessLevel.PRIVATE)
-@Entity
+@AllArgsConstructor
 public class Association implements Serializable {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idAssociation;
+
+    private String associationAddress;
     private String associationName;
     private String description;
-    private Boolean validated;
+
+    @Enumerated(EnumType.STRING)
+    private AssociationStatus status = AssociationStatus.PENDING;
+
+    private String associationLogoPath;
+    private String registrationDocumentPath;
+    private String legalDocumentPath;
+
+    @OneToOne
+    private Subscriber subscriber;
 
     @ManyToMany(cascade = CascadeType.ALL)
-    private Set<Subscription> subscriptions;
+    private Set<Subscription> subscriptions = new HashSet<>();
 
     @ManyToMany(cascade = CascadeType.ALL)
-    private Set<Mission> missions;
+    private Set<Mission> missions = new HashSet<>();
 
-    @OneToMany(cascade = CascadeType.ALL, mappedBy="association")
-    private Set<Event> events;
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "association")
+    private Set<Event> events = new HashSet<>();
 
-    @OneToMany(cascade = CascadeType.ALL, mappedBy="association")
-    private Set<Notification> notifications;
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "association")
+    private Set<Notification> notifications = new HashSet<>();
 
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinTable(
+            name = "association_partnerships",
+            joinColumns = @JoinColumn(name = "association_id"),
+            inverseJoinColumns = @JoinColumn(name = "partner_id")
+    )
+    private Set<Association> partners = new HashSet<>();
 
+    private Integer partnershipScore = 0;
 
+    @Enumerated(EnumType.STRING)
+    private PartnershipTier partnershipTier = PartnershipTier.BRONZE;
 
+    public enum AssociationStatus {
+        PENDING, APPROVED, REJECTED
+    }
 
-
-
+    public enum PartnershipTier {
+        BRONZE, SILVER, GOLD
+    }
 }

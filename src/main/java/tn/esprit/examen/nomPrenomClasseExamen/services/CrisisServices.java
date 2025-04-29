@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import tn.esprit.examen.nomPrenomClasseExamen.Repositories.AssociationRepository;
 import tn.esprit.examen.nomPrenomClasseExamen.Repositories.CrisisRepository;
 import tn.esprit.examen.nomPrenomClasseExamen.Repositories.SubscriberRepository;
 import tn.esprit.examen.nomPrenomClasseExamen.Repositories.UserRepository;
@@ -13,10 +14,14 @@ import tn.esprit.examen.nomPrenomClasseExamen.dto.CrisisDTO;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.*;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Date;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -31,6 +36,9 @@ public class CrisisServices implements ICrisisServices {
 
     private final SmsService smsService;
     private final UserRepository userRepository;
+    private final EmailService emailService;
+    private final AssociationRepository associationRepository;
+
     @Override
     public Crisis addCrisis(CrisisDTO crisisDTO) {
         if (crisisDTO == null) {
@@ -71,8 +79,11 @@ public class CrisisServices implements ICrisisServices {
             }
         }
 
-        // ✅ Sauvegarde de la crise
+        assignCrisisToAssociation(crisis);
         Crisis savedCrisis = crisisRepository.save(crisis);
+
+        analyzeAndNotifyUsersByCity();
+
 
         // ✅ Envoi de SMS si besoin
         handleNewCrisis(savedCrisis);
@@ -189,5 +200,77 @@ public class CrisisServices implements ICrisisServices {
         }
     }
 
+    @Override
+    public void analyzeAndNotifyUsersByCity() {
+            LocalDate today = LocalDate.now();
+
+            // 1. Récupérer les crises d’aujourd’hui
+            List<Crisis> todayCrises = crisisRepository.findAll().stream()
+                    .filter(crisis -> {
+                        if (crisis.getCrisisDate() == null) return false;
+                        return crisis.getCrisisDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate().isEqual(today);
+                    })
+                    .toList();
+
+            // 2. Grouper les crises par localisation
+            Map<String, List<Crisis>> crisesByLocation = todayCrises.stream()
+                    .collect(Collectors.groupingBy(Crisis::getLocation));
+
+            // 3. Vérifier chaque localisation
+            for (Map.Entry<String, List<Crisis>> entry : crisesByLocation.entrySet()) {
+                String location = entry.getKey();
+                List<Crisis> locationCrises = entry.getValue();
+
+                // Si 3 crises sont signalées dans la même localisation aujourd'hui
+                if (locationCrises.size() >= 3) {
+                    // 4. Récupérer les utilisateurs dans cette localisation
+                    List<User> users = userRepository.findByLocation(location);
+
+                    for (User user : users) {
+                        String subject = "🚨 Alerte Crise : " + location + " - Plusieurs événements signalés";
+                        String body = "<html>"
+                                + "<body style=\"font-family: Arial, sans-serif; color: #333;\">"
+                                + "<h2 style=\"color: #D32F2F;\">Alerte de Crises à " + location + "</h2>"
+                                + "<p>Bonjour <strong>" + user.getLastName() + "</strong>,</p>"
+                                + "<p>Nous souhaitons vous informer qu'un nombre important de crises a été signalé aujourd'hui à <strong>" + location + "</strong>.</p>"
+                                + "<p>En effet, <strong>" + locationCrises.size() + " crise(s)</strong> ont été signalées, indiquant une situation d'urgence à cette localisation.</p>"
+                                + "<p style=\"font-size: 14px; color: #555;\">Nous vous encourageons à rester vigilant(e) et à suivre les recommandations locales pour assurer votre sécurité.</p>"
+                                + "<p style=\"color: #555;\"><em>Restez informé(e), restez en sécurité.</em></p>"
+                                + "<p>Bien à vous,</p>"
+                                + "<p><strong>L'équipe de gestion des crises</strong></p>"
+                                + "</body>"
+                                + "</html>";
+
+                        try {
+                            // Envoi de l'email
+                            emailService.sendEmail(user.getEmail(), subject, body);
+                            log.info("Email envoyé à : " + user.getEmail() + " pour la localisation : " + location);
+                        } catch (Exception e) {
+                            log.error("Erreur lors de l'envoi de l'email à " + user.getEmail(), e);
+                        }
+                    }
+                }
+            }
+        }
+
+
+
+    public Crisis assignCrisisToAssociation(Crisis crisis) {
+        String crisisLocation = crisis.getLocation().toLowerCase();
+
+        // Rechercher une association dont l'adresse contient la même ville
+        Optional<Association> optionalAssociation = associationRepository
+                .findAll()
+                .stream()
+                .filter(a -> crisisLocation.contains(a.getAssociationAddress().toLowerCase()))
+                .findFirst();
+
+        optionalAssociation.ifPresent(crisis::setAssignedAssociation);
+        return crisis;
+    }
+
+
+
 }
+
 
