@@ -20,7 +20,7 @@ public class Response implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idRespons;
-    private LocalDateTime dateRespons=LocalDateTime.now();
+    private LocalDateTime dateRespons;
     private String content;
     private String object;
 

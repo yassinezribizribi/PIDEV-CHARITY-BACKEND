@@ -1,5 +1,6 @@
 package tn.esprit.examen.nomPrenomClasseExamen.entities;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -17,6 +18,8 @@ import java.util.Set;
 @Entity
 public class Subscription implements Serializable {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)  // Permet l'auto-incrémentation
+
     private Long idSubscription;
     private Date subscriptionDate;
 
@@ -24,5 +27,6 @@ public class Subscription implements Serializable {
     private Set<Posts> Postss;
 
     @ManyToMany(mappedBy="subscriptions", cascade = CascadeType.ALL)
+    @JsonBackReference
     private Set<Association> associations;
 }

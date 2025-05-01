@@ -28,4 +28,6 @@ public class SubscriberDetailsServiceImpl implements UserDetailsService {
         System.out.println("✅ Subscriber trouvé : " + subscriber.getEmail());
         return SubDetailsImpl.build(subscriber);
     }
+
 }
+

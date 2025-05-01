@@ -69,7 +69,7 @@ public class RequestService {
         Request request = getRequestById(id);
 
         // Mise à jour des champs à partir du DTO
-        
+
         request.setDateRequest(requestDTO.getDateRequest());
         request.setObject(requestDTO.getObject());
         request.setContent(requestDTO.getContent());
@@ -122,4 +122,3 @@ public class RequestService {
 
 
 }
-

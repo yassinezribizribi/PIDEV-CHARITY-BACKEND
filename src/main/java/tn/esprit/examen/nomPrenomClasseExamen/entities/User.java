@@ -12,7 +12,7 @@ import java.util.Set;
 @ToString
 @AllArgsConstructor
 @NoArgsConstructor
-@Inheritance(strategy = InheritanceType.JOINED) // Using JOINED strategy
+@Inheritance(strategy = InheritanceType.JOINED)
 @Entity
 public class User implements Serializable{
     @Id
@@ -27,6 +27,7 @@ public class User implements Serializable{
     private Boolean isBanned;
     private String banreason;
     private String job;
+
     private String location;
 
 

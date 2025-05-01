@@ -16,6 +16,8 @@ import java.util.Set;
 @Entity
 public class Training implements Serializable {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)  // Permet l'auto-incrémentation
+
     private Long idTraining;
     private String trainingName;
     private String description;

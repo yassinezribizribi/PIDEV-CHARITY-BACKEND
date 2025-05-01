@@ -1,5 +1,6 @@
 package tn.esprit.examen.nomPrenomClasseExamen.entities;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
@@ -7,53 +8,56 @@ import lombok.experimental.FieldDefaults;
 
 import java.util.List;
 import java.util.Set;
+
 @Getter
 @Setter
-@ToString
 @AllArgsConstructor
 @NoArgsConstructor
-@FieldDefaults(level= AccessLevel.PRIVATE)
+@FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
 public class Subscriber extends User {
 
-    @Enumerated(EnumType.STRING) // Stocke le rôle en tant que texte dans la base de données
-    private Role role; // Change String -> Role (Enum)
+    @Enumerated(EnumType.STRING)
+    private Role role;
 
-    // Role-specific fields (nullable for roles that don't use them)
     @Column(nullable = true)
-    private String skills;          // For VOLUNTEER
+    private String skills;
     @Column(nullable = true)
-    private String nationality;     // For REFUGEE
+    private String nationality;
     @Column(nullable = true)
-    private String expertiseArea;   // For MENTOR
+    private String expertiseArea;
     @Column(nullable = true)
-    private String associationRole; // For ASSOCIATION_MEMBER
+    private String associationRole;
 
     @ManyToOne
-    private Healthcare healthcare; // "healthcare" au lieu de "healthcares"
+    private Healthcare healthcare;
 
+    @OneToOne(mappedBy = "subscriber", cascade = CascadeType.ALL)
+    @JsonBackReference
+    private Association association;
 
     @OneToMany(cascade = CascadeType.ALL)
+    @JsonIgnore
     private Set<Animal> animals;
 
+//    @ManyToMany(mappedBy="subscribers", cascade = CascadeType.ALL)
+//    @JsonIgnore
 
+//    private Set<Donation> donations;
 
     @ManyToMany(mappedBy="subscribers", cascade = CascadeType.ALL)
-    private Set<Donation> donations;
-
-    @ManyToMany(mappedBy="subscribers", cascade = CascadeType.ALL)
+    @JsonIgnore
     private Set<Training> trainings;
 
-    @ManyToMany(mappedBy="subscribers", cascade = CascadeType.ALL)
+    @ManyToMany(mappedBy = "subscribers")
+    @JsonIgnore
     private Set<Forum> forums;
+
+    @OneToMany(mappedBy = "createdBy", cascade = CascadeType.ALL)
+    @JsonIgnore
+    private Set<JobOffer> jobOffers;
 
     @OneToMany(mappedBy = "subscriber")
     @JsonIgnore
-    private List<Crisis> crises; // Liste des crises signalées par ce subscriber
-
-
-
-
-
-
+    private List<Crisis> crises;
 }

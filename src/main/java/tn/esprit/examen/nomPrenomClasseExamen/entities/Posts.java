@@ -18,6 +18,8 @@ import java.util.Set;
 public class Posts implements Serializable{
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)  // Permet l'auto-incrémentation
+
     private Long idPosts;
     private String content;
     private Date creationDate;

@@ -1,4 +1,5 @@
 package tn.esprit.examen.nomPrenomClasseExamen.entities;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -14,6 +15,8 @@ import java.util.Set;
 @FieldDefaults(level= AccessLevel.PRIVATE)
 @Entity
 public class CagnotteEnligne implements Serializable {
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+
 
     @Id
     private Long idCagnotte;
@@ -22,6 +25,14 @@ public class CagnotteEnligne implements Serializable {
     private float goalAmount;
     private float currentAmount;
 
-    @ManyToMany(mappedBy="cagnotteenlignes", cascade = CascadeType.ALL)
-    private Set<Donation> donations;
+    @OneToOne(mappedBy="cagnotteenligne",cascade = CascadeType.ALL)
+    @JsonIgnore // Prevent recursion here
+
+    private Donation donation;
+
+
+    @OneToMany(cascade = CascadeType.ALL)
+    @JsonIgnore // Prevent recursion here
+
+    private Set<Paiement> Paiements;
 }

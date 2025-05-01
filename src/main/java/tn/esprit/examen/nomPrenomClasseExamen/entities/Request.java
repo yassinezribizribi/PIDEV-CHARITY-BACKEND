@@ -11,6 +11,7 @@ import java.util.Set;
 
 @Getter
 @Setter
+@ToString
 @AllArgsConstructor
 @NoArgsConstructor
 @FieldDefaults(level= AccessLevel.PRIVATE)
@@ -30,7 +31,7 @@ public class Request implements Serializable {
     private Set<Response> responses;
 
     @ManyToOne
-            @JsonIgnore
+    @JsonIgnore
     Forum forum;
     public Request(Date dateRequest, String object, String content, Boolean isUrgent, Forum forum) {
 

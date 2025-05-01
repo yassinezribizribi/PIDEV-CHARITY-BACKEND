@@ -1,5 +1,6 @@
 package tn.esprit.examen.nomPrenomClasseExamen.dto;
 
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -13,6 +14,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class UserDataDTO {
   private Long idUser;
+
   @NotNull(message = "Le nom ne peut pas être null")
   @Size(min = 3, max = 50, message = "Le nom doit contenir entre 3 et 50 caractères")
   private String firstName;
@@ -25,6 +27,7 @@ public class UserDataDTO {
   private Boolean isBanned;
   private String banreason;
   private String job;
+
   private String location;
 
 
