@@ -6,6 +6,6 @@ import tn.esprit.examen.nomPrenomClasseExamen.entities.Association;
 import java.util.Optional;
 
 public interface AssociationRepository extends JpaRepository<Association, Long> {
-    Optional<Association> findByAssociationAddressContainingIgnoreCase(String location);
+    Optional<Association> findByAssociationAddress(String associationAddress);
 
 }

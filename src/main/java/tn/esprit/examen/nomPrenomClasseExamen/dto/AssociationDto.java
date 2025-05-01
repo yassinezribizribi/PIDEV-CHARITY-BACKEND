@@ -15,6 +15,8 @@ import java.util.Set;
 public class AssociationDto {
     private Long idAssociation;
     private String associationAddress;
+    private Double latitude;
+    private Double longitude;
     private String associationName;
     private String description;
     private Association.AssociationStatus status;

@@ -1,5 +1,7 @@
 package tn.esprit.examen.nomPrenomClasseExamen.services;
 
+import jakarta.persistence.EntityNotFoundException;
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +12,7 @@ import tn.esprit.examen.nomPrenomClasseExamen.Repositories.AssociationRepository
 import tn.esprit.examen.nomPrenomClasseExamen.Repositories.CrisisRepository;
 import tn.esprit.examen.nomPrenomClasseExamen.Repositories.SubscriberRepository;
 import tn.esprit.examen.nomPrenomClasseExamen.Repositories.UserRepository;
+import tn.esprit.examen.nomPrenomClasseExamen.dto.CrisisAssignmentResponse;
 import tn.esprit.examen.nomPrenomClasseExamen.dto.CrisisDTO;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.*;
 
@@ -17,7 +20,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Date;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -26,14 +28,12 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 @AllArgsConstructor
-
 public class CrisisServices implements ICrisisServices {
 
     private final CrisisRepository crisisRepository;
     private final SubscriberRepository subscriberRepository;
     private final NominatimService nominatimService;
-    private final ImageStorageService imageStorageService; // 🔥 Ajout de ce service pour gérer les images
-
+    private final ImageStorageService imageStorageService;
     private final SmsService smsService;
     private final UserRepository userRepository;
     private final EmailService emailService;
@@ -79,19 +79,16 @@ public class CrisisServices implements ICrisisServices {
             }
         }
 
-        assignCrisisToAssociation(crisis);
         Crisis savedCrisis = crisisRepository.save(crisis);
+        assignCrisisToAssociation(crisis.getIdCrisis());  // Directly calling the method
 
         analyzeAndNotifyUsersByCity();
-
 
         // ✅ Envoi de SMS si besoin
         handleNewCrisis(savedCrisis);
 
         return savedCrisis;
     }
-
-
 
     @Override
     public Crisis updateCrisis(Long id, Crisis updatedCrisis) {
@@ -148,8 +145,6 @@ public class CrisisServices implements ICrisisServices {
         return crisisRepository.findBySeverity(severity);
     }
 
-
-
     @Override
     public Crisis updateCrisisStatus(Long id, CrisisStatus status) {
         Crisis crisis = crisisRepository.findById(id)
@@ -163,9 +158,6 @@ public class CrisisServices implements ICrisisServices {
         crisisDTO.setImage(file);
         return addCrisis(crisisDTO); // ✅ Reuse your existing logic
     }
-
-
-
 
     @Scheduled(cron = "0 0 * * * *") // toutes les heures
     public void autoExpireOldPendingCrises() {
@@ -191,7 +183,7 @@ public class CrisisServices implements ICrisisServices {
             for (User user : targetUsers) {
                 try {
                     smsService.sendSms(user.getTelephone(),
-                            "🚨 Attention, une crise HIGH de categorie " + crisis.getCategorie()+" a été signalée à " + crisis.getLocation() + ". Restez vigilant !");
+                            "🚨 Attention, une crise HIGH de categorie " + crisis.getCategorie() + " a été signalée à " + crisis.getLocation() + ". Restez vigilant !");
                 } catch (Exception e) {
                     log.error("Erreur lors de l'envoi du SMS à l'utilisateur avec le téléphone : " + user.getTelephone(), e);
                     // Continue sending to others even if one fails
@@ -202,75 +194,142 @@ public class CrisisServices implements ICrisisServices {
 
     @Override
     public void analyzeAndNotifyUsersByCity() {
-            LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now();
 
-            // 1. Récupérer les crises d’aujourd’hui
-            List<Crisis> todayCrises = crisisRepository.findAll().stream()
-                    .filter(crisis -> {
-                        if (crisis.getCrisisDate() == null) return false;
-                        return crisis.getCrisisDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate().isEqual(today);
-                    })
-                    .toList();
+        // 1. Récupérer les crises d’aujourd’hui
+        List<Crisis> todayCrises = crisisRepository.findAll().stream()
+                .filter(crisis -> {
+                    if (crisis.getCrisisDate() == null) return false;
+                    return crisis.getCrisisDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate().isEqual(today);
+                })
+                .toList();
 
-            // 2. Grouper les crises par localisation
-            Map<String, List<Crisis>> crisesByLocation = todayCrises.stream()
-                    .collect(Collectors.groupingBy(Crisis::getLocation));
+        // 2. Grouper les crises par localisation
+        Map<String, List<Crisis>> crisesByLocation = todayCrises.stream()
+                .collect(Collectors.groupingBy(Crisis::getLocation));
 
-            // 3. Vérifier chaque localisation
-            for (Map.Entry<String, List<Crisis>> entry : crisesByLocation.entrySet()) {
-                String location = entry.getKey();
-                List<Crisis> locationCrises = entry.getValue();
+        // 3. Vérifier chaque localisation
+        for (Map.Entry<String, List<Crisis>> entry : crisesByLocation.entrySet()) {
+            String location = entry.getKey();
+            List<Crisis> locationCrises = entry.getValue();
 
-                // Si 3 crises sont signalées dans la même localisation aujourd'hui
-                if (locationCrises.size() >= 3) {
-                    // 4. Récupérer les utilisateurs dans cette localisation
-                    List<User> users = userRepository.findByLocation(location);
+            // Si 3 crises sont signalées dans la même localisation aujourd'hui
+            if (locationCrises.size() >= 3) {
+                // 4. Récupérer les utilisateurs dans cette localisation
+                List<User> users = userRepository.findByLocation(location);
 
-                    for (User user : users) {
-                        String subject = "🚨 Alerte Crise : " + location + " - Plusieurs événements signalés";
-                        String body = "<html>"
-                                + "<body style=\"font-family: Arial, sans-serif; color: #333;\">"
-                                + "<h2 style=\"color: #D32F2F;\">Alerte de Crises à " + location + "</h2>"
-                                + "<p>Bonjour <strong>" + user.getLastName() + "</strong>,</p>"
-                                + "<p>Nous souhaitons vous informer qu'un nombre important de crises a été signalé aujourd'hui à <strong>" + location + "</strong>.</p>"
-                                + "<p>En effet, <strong>" + locationCrises.size() + " crise(s)</strong> ont été signalées, indiquant une situation d'urgence à cette localisation.</p>"
-                                + "<p style=\"font-size: 14px; color: #555;\">Nous vous encourageons à rester vigilant(e) et à suivre les recommandations locales pour assurer votre sécurité.</p>"
-                                + "<p style=\"color: #555;\"><em>Restez informé(e), restez en sécurité.</em></p>"
-                                + "<p>Bien à vous,</p>"
-                                + "<p><strong>L'équipe de gestion des crises</strong></p>"
-                                + "</body>"
-                                + "</html>";
+                for (User user : users) {
+                    String subject = "🚨 Alerte Crise : " + location + " - Plusieurs événements signalés";
+                    String body = "<html>"
+                            + "<body style=\"font-family: Arial, sans-serif; color: #333;\">"
+                            + "<h2 style=\"color: #D32F2F;\">Alerte de Crises à " + location + "</h2>"
+                            + "<p>Bonjour <strong>" + user.getLastName() + "</strong>,</p>"
+                            + "<p>Nous souhaitons vous informer qu'un nombre important de crises a été signalé aujourd'hui à <strong>" + location + "</strong>.</p>"
+                            + "<p>En effet, <strong>" + locationCrises.size() + " crise(s)</strong> ont été signalées, indiquant une situation d'urgence à cette localisation.</p>"
+                            + "<p style=\"font-size: 14px; color: #555;\">Nous vous encourageons à rester vigilant(e) et à suivre les recommandations locales pour assurer votre sécurité.</p>"
+                            + "<p style=\"color: #555;\"><em>Restez informé(e), restez en sécurité.</em></p>"
+                            + "<p>Bien à vous,</p>"
+                            + "<p><strong>L'équipe de gestion des crises</strong></p>"
+                            + "</body>"
+                            + "</html>";
 
-                        try {
-                            // Envoi de l'email
-                            emailService.sendEmail(user.getEmail(), subject, body);
-                            log.info("Email envoyé à : " + user.getEmail() + " pour la localisation : " + location);
-                        } catch (Exception e) {
-                            log.error("Erreur lors de l'envoi de l'email à " + user.getEmail(), e);
-                        }
+                    try {
+                        // Envoi de l'email
+                        emailService.sendEmail(user.getEmail(), subject, body);
+                        log.info("Email envoyé à : " + user.getEmail() + " pour la localisation : " + location);
+                    } catch (Exception e) {
+                        log.error("Erreur lors de l'envoi de l'email à " + user.getEmail(), e);
                     }
                 }
             }
         }
-
-
-
-    public Crisis assignCrisisToAssociation(Crisis crisis) {
-        String crisisLocation = crisis.getLocation().toLowerCase();
-
-        // Rechercher une association dont l'adresse contient la même ville
-        Optional<Association> optionalAssociation = associationRepository
-                .findAll()
-                .stream()
-                .filter(a -> crisisLocation.contains(a.getAssociationAddress().toLowerCase()))
-                .findFirst();
-
-        optionalAssociation.ifPresent(crisis::setAssignedAssociation);
-        return crisis;
     }
 
 
 
+    public CrisisAssignmentResponse assignCrisisToAssociation(Long crisisId) {
+        if (crisisId == null) {
+            throw new IllegalArgumentException("Crisis ID cannot be null");
+        }
+
+        Crisis crisis = crisisRepository.findById(crisisId)
+                .orElseThrow(() -> new EntityNotFoundException("Crisis not found with ID: " + crisisId));
+
+        String crisisLocation = crisis.getLocation();
+        if (crisisLocation == null || crisisLocation.isBlank()) {
+            throw new IllegalArgumentException("Crisis location is null or empty");
+        }
+
+        // Géocodage de la crise
+        Double[] crisisCoords = nominatimService.getCoordinatesFromAddress(crisisLocation);
+        if (crisisCoords == null) {
+            throw new IllegalArgumentException("Unable to geocode crisis location: " + crisisLocation);
+        }
+
+        List<Association> approvedAssociations = associationRepository.findAll().stream()
+                .filter(a -> a.getStatus() == Association.AssociationStatus.APPROVED)
+                .filter(a -> a.getAssociationAddress() != null && !a.getAssociationAddress().isBlank())
+                .collect(Collectors.toList());
+
+        // 1. Vérifier s'il existe une association exactement dans la même localisation
+        Optional<Association> sameLocationAssociation = approvedAssociations.stream()
+                .filter(a -> crisisLocation.equalsIgnoreCase(a.getAssociationAddress()))
+                .findFirst();
+
+        if (sameLocationAssociation.isPresent()) {
+            crisis.setAssociation(sameLocationAssociation.get());
+            crisisRepository.save(crisis);
+            log.info("Crisis assignée à une association avec la même localisation : " + sameLocationAssociation.get().getAssociationName());
+            return new CrisisAssignmentResponse(
+                    "Crisis assigned to an association with the exact same location.",
+                    sameLocationAssociation.get().getAssociationAddress()
+            );
+        }
+
+        // 2. Sinon, chercher la plus proche association géographiquement
+        Association closestAssociation = null;
+        double minDistance = Double.MAX_VALUE;
+
+        for (Association association : approvedAssociations) {
+            Double[] assocCoords = nominatimService.getCoordinatesFromAddress(association.getAssociationAddress());
+            if (assocCoords != null) {
+                double distance = haversine(crisisCoords[0], crisisCoords[1], assocCoords[0], assocCoords[1]);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closestAssociation = association;
+                }
+            }
+        }
+
+        if (closestAssociation != null) {
+            crisis.setAssociation(closestAssociation);
+            crisisRepository.save(crisis);
+            log.info("Crisis assignée à l'association la plus proche : " + closestAssociation.getAssociationName() + " (distance : " + minDistance + " km)");
+            return new CrisisAssignmentResponse(
+                    "Crisis successfully assigned to the nearest approved association.",
+                    closestAssociation.getAssociationAddress()
+            );
+        } else {
+            log.warn("Aucune association trouvée pour assigner la crise.");
+            return new CrisisAssignmentResponse(
+                    "No suitable association found to assign the crisis.",
+                    null
+            );
+        }
+    }
+
+
+    // Méthode Haversine pour calculer la distance entre deux points GPS
+    private double haversine(double lat1, double lon1, double lat2, double lon2) {
+        final int R = 6371; // Rayon de la Terre en km
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
+                        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+    }
+
+
 }
-
-

@@ -1,6 +1,7 @@
 package tn.esprit.examen.nomPrenomClasseExamen.services;
 
 import org.springframework.web.multipart.MultipartFile;
+import tn.esprit.examen.nomPrenomClasseExamen.dto.CrisisAssignmentResponse;
 import tn.esprit.examen.nomPrenomClasseExamen.dto.CrisisDTO;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Crisis;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.CrisisSeverity;
@@ -28,7 +29,8 @@ public interface ICrisisServices {
     Crisis updateCrisisStatus(Long id, CrisisStatus status);
     void handleNewCrisis(Crisis crisis);
     void analyzeAndNotifyUsersByCity();
-    Crisis assignCrisisToAssociation(Crisis crisis);
+    CrisisAssignmentResponse assignCrisisToAssociation(Long crisisId);
+
 
 
 

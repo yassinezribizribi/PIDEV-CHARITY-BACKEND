@@ -1,13 +1,17 @@
 package tn.esprit.examen.nomPrenomClasseExamen.Controllers;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import tn.esprit.examen.nomPrenomClasseExamen.Repositories.AssociationRepository;
+import tn.esprit.examen.nomPrenomClasseExamen.Repositories.CrisisRepository;
 import tn.esprit.examen.nomPrenomClasseExamen.Repositories.SubscriberRepository;
 import tn.esprit.examen.nomPrenomClasseExamen.Repositories.UserRepository;
+import tn.esprit.examen.nomPrenomClasseExamen.dto.CrisisAssignmentResponse;
 import tn.esprit.examen.nomPrenomClasseExamen.dto.CrisisDTO;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.*;
 import tn.esprit.examen.nomPrenomClasseExamen.services.ICrisisServices;
@@ -29,7 +33,6 @@ public class CrisisController {
     private final ICrisisServices crisisService;
     private final SubscriberRepository subscriberRepository;
     private final SmsService smsService;
-    private final UserRepository userRepository;
 
 
     // ✅ Nouvelle méthode unique pour ajouter une crise avec ou sans image
@@ -138,5 +141,15 @@ public class CrisisController {
         crisisService.analyzeAndNotifyUsersByCity();
         return ResponseEntity.ok("Alerts sent successfully!");
     }
+
+    // Dans CrisisServices.java
+
+
+    @PutMapping("/{crisisId}/assign-association")
+    public ResponseEntity<CrisisAssignmentResponse> assignCrisisToAssociation(@PathVariable Long crisisId) {
+        CrisisAssignmentResponse response = crisisService.assignCrisisToAssociation(crisisId);
+        return ResponseEntity.ok(response);
+    }
+
 
 }
