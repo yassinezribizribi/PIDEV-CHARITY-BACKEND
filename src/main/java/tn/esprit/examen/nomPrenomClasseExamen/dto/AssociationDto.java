@@ -1,21 +1,17 @@
 package tn.esprit.examen.nomPrenomClasseExamen.dto;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import tn.esprit.examen.nomPrenomClasseExamen.entities.Association;
-import tn.esprit.examen.nomPrenomClasseExamen.entities.Event;
-import tn.esprit.examen.nomPrenomClasseExamen.entities.Mission;
-import tn.esprit.examen.nomPrenomClasseExamen.entities.Notification;
-import tn.esprit.examen.nomPrenomClasseExamen.entities.Subscription;
-import tn.esprit.examen.nomPrenomClasseExamen.entities.Subscriber;
+import com.fasterxml.jackson.annotation.*;
+import lombok.*;
+import tn.esprit.examen.nomPrenomClasseExamen.entities.*;
 
+import java.util.HashSet;
 import java.util.Set;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
+@JsonInclude(JsonInclude.Include.NON_NULL)  // Only include non-null fields
 public class AssociationDto {
     private Long idAssociation;
     private String associationAddress;
@@ -25,12 +21,16 @@ public class AssociationDto {
     private String associationLogoPath;
     private String registrationDocumentPath;
     private String legalDocumentPath;
+    private Integer partnershipScore;
 
-    // Use @JsonIgnore to avoid circular references
+    // Partnership tier information (will be set conditionally)
+    private Association.PartnershipTier partnershipTier = Association.PartnershipTier.BRONZE; // Default
+    private Integer progressToNextTier;
+    private Double similarityScore;  // For recommendations only
+
     @JsonIgnore
     private Subscriber subscriber;
 
-    // Use @JsonIgnore to avoid circular references
     @JsonIgnore
     private Set<Subscription> subscriptions;
 
@@ -42,4 +42,15 @@ public class AssociationDto {
 
     @JsonIgnore
     private Set<Notification> notifications;
+
+    @JsonIdentityInfo(
+            generator = ObjectIdGenerators.PropertyGenerator.class,
+            property = "idAssociation"
+    )
+    @JsonIgnoreProperties({"partners", "similarityScore"})
+    @Builder.Default
+    private Set<AssociationDto> partners = new HashSet<>();
+
+
 }
+

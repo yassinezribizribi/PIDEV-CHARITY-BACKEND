@@ -41,12 +41,25 @@ public class WebSecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Allow OPTIONS requests
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/protected/files/**").authenticated() // Protect file endpoints
+                        .requestMatchers("/ws/**").permitAll() // Allow WebSocket connections
+                        .requestMatchers("/topic/**").permitAll()
+                        .requestMatchers("/assets/**").permitAll()
+                        .requestMatchers("/queue/**").permitAll()
+                        .requestMatchers("/app/**").permitAll()
+                        .requestMatchers("/user/**").permitAll()
+                        .requestMatchers("/protected/files/**").authenticated()
                         .requestMatchers("/error").permitAll()
+                        // Add these specific rules for partnership endpoints
+                        .requestMatchers(HttpMethod.POST, "/api/associations/*/partners/*").hasAnyRole("ASSOCIATION_MEMBER", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/associations/*/partners").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/associations/*/partners/*").hasAnyRole("ASSOCIATION_MEMBER", "ADMIN")
+                        // Other existing rules
                         .requestMatchers(HttpMethod.PUT, "/api/associations/*/verify").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/associations").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/associations/list").permitAll()
+
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class)
@@ -57,7 +70,6 @@ public class WebSecurityConfig {
                         .accessDeniedHandler(customAccessDeniedHandler)
                 )
                 .build();
-
     }
     @Bean
     public PasswordEncoder passwordEncoder() {

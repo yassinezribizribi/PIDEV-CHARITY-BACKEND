@@ -5,6 +5,7 @@ import lombok.experimental.FieldDefaults;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 
 @Getter
@@ -32,6 +33,13 @@ public class Mission implements Serializable{
 
     @ManyToOne
     Crisis crisis;
+
+    @ElementCollection
+    @CollectionTable(name = "mission_tags", joinColumns = @JoinColumn(name = "mission_id"))
+    @Column(name = "tag")
+    private List<String> tags;  // You can use Set<String> if you prefer unique tags
+
+
 
 //    @OneToMany(cascade = CascadeType.ALL, mappedBy="missionsubscriber")
 //    private Set<Subscriber> subscribersMission;

@@ -6,6 +6,7 @@ import tn.esprit.examen.nomPrenomClasseExamen.entities.MissionStatus;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -22,6 +23,7 @@ public class MissionDTO implements Serializable {
 
     private Long crisisId;       // Stocker uniquement l'ID de Crisis
     private Long associationId;  // Stocker uniquement l'ID de l'Association
+    private List<String> tags;  // Add this for tags
 
     // 🔹 Convert DTO to Entity
     public Mission toMission() {
@@ -33,6 +35,8 @@ public class MissionDTO implements Serializable {
         mission.setEndDate(this.endDate);
         mission.setVolunteerCount(this.volunteerCount);
         mission.setStatus(this.status);
+        mission.setTags(this.tags);
+
         return mission;
     }
 
@@ -49,7 +53,9 @@ public class MissionDTO implements Serializable {
                 mission.getCrisis() != null ? mission.getCrisis().getIdCrisis() : null,
                 mission.getAssociations() != null && !mission.getAssociations().isEmpty()
                         ? mission.getAssociations().iterator().next().getIdAssociation()
-                        : null
+                        : null,
+                mission.getTags() // Add this line to include tags in the DTO
+
         );
     }
 }

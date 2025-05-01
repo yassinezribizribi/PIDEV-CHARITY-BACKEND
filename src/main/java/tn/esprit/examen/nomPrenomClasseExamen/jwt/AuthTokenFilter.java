@@ -48,11 +48,11 @@ public class AuthTokenFilter extends OncePerRequestFilter {
 
         try {
             String jwt = parseJwt(request);
+            System.err.println(request.getHeader("Authorization"));
 
-            if (jwt == null) {
-                logger.warn("⛔ Aucun token JWT trouvé");
-                sendUnauthorizedError(response, "Authentication required");
-                return;
+            // For WebSocket requests, check query parameter
+            if (jwt == null && isWebSocketRequest(request)) {
+                jwt = request.getParameter("token");
             }
 
             if (!jwtUtils.validateJwtToken(jwt)) {
@@ -87,10 +87,13 @@ public class AuthTokenFilter extends OncePerRequestFilter {
 
         filterChain.doFilter(request, response);
     }
-
+    private boolean isWebSocketRequest(HttpServletRequest request) {
+        return request.getRequestURI().startsWith("/ws/");
+    }
     private boolean isPublicRoute(String uri, String method) {
+        // Only allow POST to /api/associations (create new association) without auth
         return uri.startsWith("/api/auth/") ||
-                (uri.startsWith("/api/associations") && "POST".equalsIgnoreCase(method));
+                (uri.equals("/api/associations") && "POST".equalsIgnoreCase(method));
     }
 
     private String parseJwt(HttpServletRequest request) {
