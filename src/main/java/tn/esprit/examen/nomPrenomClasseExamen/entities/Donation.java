@@ -2,10 +2,13 @@ package tn.esprit.examen.nomPrenomClasseExamen.entities;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.io.Serializable;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.Set;
@@ -27,23 +30,32 @@ public class Donation implements Serializable {
     private String description; // Details about the donation request
     private int quantiteDemandee; // Total amount needed (set by the association)
     private int quantiteDonnee ; // Total amount received (updated as donors contribute)
-
     //    private Boolean availability;
-    private LocalDateTime lastUpdated;
+    //    private LocalDateTime lastUpdated;
     private DonationType donationType;
+    private String imageUrl; // for one image
+    private LocalDate startDate;
+    private Date endDate;
+    //    @Transient // This field won't be saved in DB
+//    private Long suggestedExtensionDays;
+    @Min(1)
+    @Max(4)
+    private int priority; // 1 = Low, 2 = Medium, 3 = High, 4 = Urgent
 
     private int quantiteExcedentaire ; // NEW: To track excess donations
+
+    @PrePersist
+    public void onCreate() {
+        this.startDate = LocalDate.now(); // Set automatically on creation
+    }
+
+
+    @Enumerated(EnumType.STRING)
+    DonationStatus status = DonationStatus.ACTIVE; // Default when created
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "donation")
     @JsonIgnore // Prevent recursion here
     private Set<Dons> dons;
-    @ManyToMany
-    @JoinTable(
-            name = "donation_subscriber",
-            joinColumns = @JoinColumn(name = "donation_id"),
-            inverseJoinColumns = @JoinColumn(name = "subscriber_id")
-    )
-    private Set<Subscriber> subscribers;
 
     @ManyToOne
     @JsonIgnore // Prevent recursion here
@@ -61,6 +73,6 @@ public class Donation implements Serializable {
         }
 
         this.quantiteDonnee = newTotal;
-        this.lastUpdated = LocalDateTime.now();
+//        this.lastUpdated = LocalDateTime.now();
     }
 }

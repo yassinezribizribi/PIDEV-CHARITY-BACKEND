@@ -22,8 +22,8 @@ public class PostAction implements Serializable {
     private TypeAction typeAction;
     private Date dateAction;
 
-    @ManyToOne
-    Testimonial testimonial;
+//    @ManyToOne
+//    Testimonial testimonial;
     @ManyToOne
     Posts posts;
 

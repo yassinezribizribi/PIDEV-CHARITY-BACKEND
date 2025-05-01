@@ -98,6 +98,17 @@ public class JobApplicationController {
         logger.info("Fetched {} job applications for job offer ID: {}", applications.size(), id);
         return ResponseEntity.ok(applications);
     }
+    @GetMapping("/my-offers/applications")
+    public ResponseEntity<List<JobApplicationDto>> getApplicationsForMyOffers(
+            @RequestHeader("Authorization") String token) {
+
+        String jwtToken = token.replace("Bearer ", "");
+        Long userId = jwtUtils.getUserIdFromJwtToken(jwtToken);
+
+        List<JobApplicationDto> applications = jobApplicationService.getApplicationsForEmployerOffers(userId);
+        logger.info("Returning {} applications for employer ID: {}", applications.size(), userId);
+        return ResponseEntity.ok(applications);
+    }
 
     @PutMapping("/{id}/accept")
     public ResponseEntity<JobApplicationDto> acceptApplication(
@@ -130,5 +141,20 @@ public class JobApplicationController {
         logger.info("Rejecting job application with id: {} with reason: {}", id, rejectionReason);
         JobApplicationDto rejectedApplication = jobApplicationService.rejectApplication(id, rejectionReason);
         return ResponseEntity.ok(rejectedApplication);
+    }
+
+
+    @GetMapping("/user/applications")
+    public ResponseEntity<List<JobApplicationDto>> getUserApplications(
+            @RequestHeader("Authorization") String token) {
+        // Extract user ID from JWT Token
+        String jwtToken = token.replace("Bearer ", "");
+        Long userId = jwtUtils.getUserIdFromJwtToken(jwtToken);
+
+        logger.info("Fetching job applications for user ID: {}", userId);
+        List<JobApplicationDto> applications = jobApplicationService.getUserApplications(userId);
+        logger.info("Fetched {} job applications for user ID: {}", applications.size(), userId);
+
+        return ResponseEntity.ok(applications);
     }
 }

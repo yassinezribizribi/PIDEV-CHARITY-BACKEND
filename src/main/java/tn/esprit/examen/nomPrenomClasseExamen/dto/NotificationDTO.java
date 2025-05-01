@@ -1,14 +1,20 @@
 package tn.esprit.examen.nomPrenomClasseExamen.dto;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Builder;
+import lombok.Data;
 import java.util.Date;
 
-@Getter
-@Setter
+@Data
+@Builder
 public class NotificationDTO {
     private Long idNotification;
     private String message;
     private Date createdAt;
-    private Long subscriberId; // ✅ ID du patient concerné
+    private boolean read;
+    private String type;
+    private String actionUrl;
+    private Long subscriberId;
+    private Long senderId;
+    private Long healthcareId;
+    private Long associationId;
 }

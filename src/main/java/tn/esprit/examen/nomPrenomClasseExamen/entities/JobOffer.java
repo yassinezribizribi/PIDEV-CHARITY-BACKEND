@@ -26,7 +26,8 @@ public class JobOffer {
     private String requirements;
     @Column(name = "is_active", columnDefinition = "BIT(1) DEFAULT 1")
     private boolean isActive;
-
+    @Column(name = "report_count")
+    private Integer reportCount = 0;
     // ADD PROPER BOOLEAN GETTER
     public boolean isActive() {  // 👈 Crucial for Hibernate mapping
         return isActive;

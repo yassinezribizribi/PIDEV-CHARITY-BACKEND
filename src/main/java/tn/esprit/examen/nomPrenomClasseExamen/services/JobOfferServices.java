@@ -1,12 +1,17 @@
 package tn.esprit.examen.nomPrenomClasseExamen.services;
 
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import tn.esprit.examen.nomPrenomClasseExamen.Repositories.ForumRepository;
+import tn.esprit.examen.nomPrenomClasseExamen.Repositories.JobApplicationRepository;
 import tn.esprit.examen.nomPrenomClasseExamen.Repositories.JobOfferRepository;
 import tn.esprit.examen.nomPrenomClasseExamen.Repositories.SubscriberRepository;
 import tn.esprit.examen.nomPrenomClasseExamen.dto.JobApplicationDto;
@@ -19,6 +24,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+
 @Service
 @AllArgsConstructor
 public class JobOfferServices {
@@ -26,6 +32,7 @@ public class JobOfferServices {
     private final JobOfferRepository jobOfferRepository;
     private final ForumRepository forumRepository;
     private final SubscriberRepository subscriberRepository;
+    private final JobApplicationRepository jobApplicationRepository;
     private final JobApplicationServices jobApplicationServices; // Inject JobApplicationServices
 
     private static final Logger logger = LoggerFactory.getLogger(JobOfferServices.class);
@@ -150,6 +157,53 @@ public class JobOfferServices {
         jobOfferRepository.deleteById(id);
         logger.info("✅ Offre supprimée avec succès !");
     }
+
+    public void reportJobOffer(Long jobOfferId, Long reporterId) {
+        JobOffer jobOffer = jobOfferRepository.findById(jobOfferId)
+                .orElseThrow(() -> new RuntimeException("Job offer not found"));
+
+        Subscriber jobOwner = jobOffer.getCreatedBy();
+        Subscriber reporter = subscriberRepository.findByIdUser(reporterId)
+                .orElseThrow(() -> new RuntimeException("Reporter not found"));
+
+        // Check if reporter is not the job owner
+        if (reporter.getIdUser().equals(jobOwner.getIdUser())) {
+            throw new RuntimeException("You cannot report your own job offer");
+        }
+
+        // Initialize reportCount if null
+        if (jobOffer.getReportCount() == null) {
+            jobOffer.setReportCount(0);
+        }
+
+        // Increment report count
+        jobOffer.setReportCount(jobOffer.getReportCount() + 1);
+        jobOfferRepository.save(jobOffer);
+
+        // If report count reaches 3, mark the job owner for review
+        if (jobOffer.getReportCount() >= 3) {
+            jobOwner.setBanreason("Multiple job offer reports");
+            subscriberRepository.save(jobOwner);
+        }
+    }
+
+    public Integer getJobOfferReportCount(Long jobOfferId) {
+        JobOffer jobOffer = jobOfferRepository.findById(jobOfferId)
+                .orElseThrow(() -> new RuntimeException("Job offer not found"));
+        return jobOffer.getReportCount() != null ? jobOffer.getReportCount() : 0;
+    }
+
+    @Transactional
+    public void banUser(Long userId, boolean isBanned, String banReason) {
+        Subscriber subscriber = subscriberRepository.findById(userId)
+                .orElseThrow(() -> new AssociationServices.ResourceNotFoundException("User not found with id: " + userId));
+
+        subscriber.setIsBanned(isBanned);
+        subscriber.setBanreason(isBanned ? banReason : null);
+
+        subscriberRepository.save(subscriber);
+    }
+    // In JobApplicationServices.java
 
 
 }

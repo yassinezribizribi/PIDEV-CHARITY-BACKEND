@@ -2,6 +2,7 @@ package tn.esprit.examen.nomPrenomClasseExamen.jwt;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,18 +10,16 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
-import org.springframework.web.context.request.RequestAttributes;
-import org.springframework.web.context.request.RequestContextHolder;
-
 import tn.esprit.examen.nomPrenomClasseExamen.services.SubDetailsImpl;
 
-import java.nio.charset.StandardCharsets;
-import java.security.Key;
-import java.util.*;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Component
 @NoArgsConstructor
+
 public class JwtUtils {
     private static final Logger logger = LoggerFactory.getLogger(JwtUtils.class);
 
@@ -29,73 +28,99 @@ public class JwtUtils {
 
     @Value("${bezkoder.app.jwtExpirationMs}")
     private int jwtExpirationMs;
-
-    private Key getSigningKey() {
-        return Keys.hmacShaKeyFor(Base64.getDecoder().decode(jwtSecret.getBytes(StandardCharsets.UTF_8)));
+    public JwtUtils(@Value("${bezkoder.app.jwtSecret}") String jwtSecret,
+                    @Value("${bezkoder.app.jwtExpirationMs}") int jwtExpirationMs) {
+        this.jwtSecret = jwtSecret;
+        this.jwtExpirationMs = jwtExpirationMs;
     }
 
     public String generateJwtToken(Authentication authentication) {
         SubDetailsImpl userPrincipal = (SubDetailsImpl) authentication.getPrincipal();
         logger.debug("🔑 Génération du JWT pour l'utilisateur : {}", userPrincipal.getEmail());
 
+        // Create claims with idUser
         Map<String, Object> claims = new HashMap<>();
-        claims.put("idUser", userPrincipal.getId());
+        claims.put("idUser", userPrincipal.getId()); // ✅ Ensure idUser is included
         claims.put("roles", userPrincipal.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.toList()));
+                .collect(Collectors.toList())
+        );
 
-        return Jwts.builder()
+        String jwtToken = Jwts.builder()
                 .setClaims(claims)
                 .setSubject(userPrincipal.getEmail())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
-                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes()), SignatureAlgorithm.HS256)
                 .compact();
+        logger.debug("Generated JWT: {}", jwtToken);  // Log the token to check its structure
+        return jwtToken;
+
+
     }
 
     public String getUserNameFromJwtToken(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
+        return Jwts.parserBuilder().setSigningKey(Keys.hmacShaKeyFor(jwtSecret.getBytes()))
                 .build()
                 .parseClaimsJws(token)
                 .getBody()
                 .getSubject();
     }
-
     public Long getUserIdFromJwtToken(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(Keys.hmacShaKeyFor(jwtSecret.getBytes()))
                 .build()
                 .parseClaimsJws(token)
-                .getBody()
-                .get("idUser", Long.class);
+                .getBody();
+
+        return claims.get("idUser", Long.class); // Extract idUser from claims
+    }
+    public String getUserEmailFromJwtToken(String token) {
+        return getUserNameFromJwtToken(token); // Reuse subject as email
+    }
+    public String getUserFirstNameFromJwtToken(String token) {
+        try {
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(Keys.hmacShaKeyFor(jwtSecret.getBytes()))
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+            return claims.get("firstName", String.class);
+        } catch (Exception e) {
+            logger.error("❌ Failed to extract first name from JWT: {}", e.getMessage());
+            return null;
+        }
     }
 
-    public boolean validateJwtToken(String authToken) {
+    public String getUserLastNameFromJwtToken(String token) {
         try {
-            Jwts.parserBuilder().setSigningKey(getSigningKey()).build().parseClaimsJws(authToken);
-            return true;
-        } catch (JwtException e) {
-            logger.error("❌ JWT validation failed: {}", e.getMessage());
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(Keys.hmacShaKeyFor(jwtSecret.getBytes()))
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+            return claims.get("lastName", String.class);
+        } catch (Exception e) {
+            logger.error("❌ Failed to extract last name from JWT: {}", e.getMessage());
+            return null;
+        }
+    }
+    public boolean validateJwtToken(String authToken) {
+        if (authToken == null || authToken.split("\\.").length != 3) {
+            logger.error("❌ Invalid JWT format: {}", authToken);
             return false;
         }
-    }
 
-    // ✅ Cette méthode te permet de récupérer l'idUser sans passer manuellement le token
-    public Long getCurrentUserId() {
         try {
-            RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
-            if (requestAttributes == null) throw new RuntimeException("Aucune requête HTTP active");
-
-            String authHeader = (String) requestAttributes.getAttribute("Authorization", RequestAttributes.SCOPE_REQUEST);
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                throw new RuntimeException("⛔ Token JWT manquant ou mal formaté");
-            }
-            String token = authHeader.substring(7).trim();
-            return getUserIdFromJwtToken(token);
+            Jwts.parserBuilder().setSigningKey(Keys.hmacShaKeyFor(jwtSecret.getBytes()))
+                    .build()
+                    .parseClaimsJws(authToken);
+            return true;
         } catch (Exception e) {
-            logger.error("Erreur lors de la récupération de l'utilisateur courant : {}", e.getMessage());
-            throw new RuntimeException("Impossible d'extraire l'utilisateur courant depuis le token");
+            logger.error("❌ JWT validation failed: {}", e.getMessage());
         }
+
+        return false;
     }
+
 }

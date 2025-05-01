@@ -48,7 +48,10 @@ public class AuthController {
     @Autowired
     private EmailService emailService;
 
-    // 🔹 LOGIN (AUTHENTICATION)
+    @PostMapping("/admin/login")
+    public ResponseEntity<?> adminLogin(@RequestBody LoginRequest loginRequest) {
+        return authenticateUser(loginRequest);
+    }
     @PostMapping("/signin")
     public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
         System.out.println("🔍 Tentative de connexion...");

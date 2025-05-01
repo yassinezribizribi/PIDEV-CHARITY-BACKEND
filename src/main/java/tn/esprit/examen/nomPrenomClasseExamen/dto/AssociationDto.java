@@ -3,6 +3,8 @@ package tn.esprit.examen.nomPrenomClasseExamen.dto;
 import com.fasterxml.jackson.annotation.*;
 import lombok.*;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.*;
+
+import java.util.HashSet;
 import java.util.Set;
 
 @Data
@@ -22,8 +24,9 @@ public class AssociationDto {
     private Integer partnershipScore;
 
     // Partnership tier information (will be set conditionally)
-    private Association.PartnershipTier partnershipTier;
+    private Association.PartnershipTier partnershipTier = Association.PartnershipTier.BRONZE; // Default
     private Integer progressToNextTier;
+    private Double similarityScore;  // For recommendations only
 
     @JsonIgnore
     private Subscriber subscriber;
@@ -44,6 +47,10 @@ public class AssociationDto {
             generator = ObjectIdGenerators.PropertyGenerator.class,
             property = "idAssociation"
     )
-    @JsonIgnoreProperties({"partners"})
-    private Set<Association> partners;
+    @JsonIgnoreProperties({"partners", "similarityScore"})
+    @Builder.Default
+    private Set<AssociationDto> partners = new HashSet<>();
+
+
 }
+

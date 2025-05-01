@@ -1,6 +1,5 @@
 package tn.esprit.examen.nomPrenomClasseExamen.entities;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
@@ -25,6 +24,8 @@ public class Dons implements Serializable {
     // 🔹 DONOR contributes to an existing donation
     private String nomDoneur;
     private String prenomDoneur;
+    private String donorEmail;
+
     //    private Long numCompte;//visitor
     private int quantite ;
 

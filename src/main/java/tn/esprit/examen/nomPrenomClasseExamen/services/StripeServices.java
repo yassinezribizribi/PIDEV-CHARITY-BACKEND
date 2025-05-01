@@ -26,7 +26,7 @@ public class StripeServices {
 
     public PaymentIntent createPaymentIntent(Long amount, String currency) throws StripeException {
         Map<String, Object> params = new HashMap<>();
-        params.put("amount", amount); // 💡 in *cents* (e.g., 1000 = 10.00 TND)
+        params.put("amount", (amount*100)); // 💡 in *cents* (e.g., 1000 = 10.00 TND)
         params.put("currency", currency);
         params.put("payment_method_types", List.of("card"));
 

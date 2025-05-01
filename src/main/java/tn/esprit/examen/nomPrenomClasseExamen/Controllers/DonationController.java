@@ -8,14 +8,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import tn.esprit.examen.nomPrenomClasseExamen.Utlis.ValidationUtils;
 import tn.esprit.examen.nomPrenomClasseExamen.dto.DonationDto;
+import tn.esprit.examen.nomPrenomClasseExamen.dto.DonationExtensionSuggestionDTO;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.CagnotteEnligne;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Donation;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.DonationType;
 import tn.esprit.examen.nomPrenomClasseExamen.services.DonationServices;
 
 import java.util.List;
+import java.util.Map;
 
 
 @RestController
@@ -58,6 +62,31 @@ public class DonationController {
             return ResponseEntity.internalServerError().build();
         }
     }
+
+//    @GetMapping("/{id}/prolong")
+//    public ResponseEntity<?> smartProlongDonation(@PathVariable Long id) {
+//        return donationService.smartProlongDonation(id);
+//    }
+//    // 2️⃣ Endpoint to apply the extension based on previous suggestion
+//    @PostMapping("/{id}/apply-extension")
+//    public ResponseEntity<?> applySmartExtension(@PathVariable Long id) {
+//        return donationService.applySmartProlongation(id);
+//    }
+
+    @GetMapping("/donation/{id}/suggest-extension")
+    public ResponseEntity<DonationExtensionSuggestionDTO> suggestExtension(@PathVariable Long id) {
+        DonationExtensionSuggestionDTO suggestion = donationService.suggestDonationExtension(id);
+        return ResponseEntity.ok(suggestion);
+    }
+
+    @PostMapping("/donation/{id}/apply-extension")
+    public ResponseEntity<String> applyExtension(@PathVariable Long id, @RequestBody Map<String, Long> payload) {
+        long daysToExtend = payload.get("daysToExtend");
+        String result = donationService.applyDonationExtension(id, daysToExtend);
+        return ResponseEntity.ok(result);
+    }
+
+
     // Get donations by association ID extracted from the JWT token
     @GetMapping("/my-donations")
     public ResponseEntity<?> getDonationsByAssociationIdFromToken(HttpServletRequest request) {
@@ -81,64 +110,61 @@ public class DonationController {
     }
 
     @PostMapping("/create")
-    public ResponseEntity<?> createDonation(@RequestBody DonationDto donationDto, @RequestHeader("Authorization") String authorizationHeader) {
+    public ResponseEntity<?> createDonation(@Valid @RequestBody DonationDto donationDto,
+                                            BindingResult bindingResult,
+                                            @RequestHeader("Authorization") String authorizationHeader) {
+
+        ResponseEntity<?> errorResponse = ValidationUtils.handleValidationErrors(bindingResult);
+        if (errorResponse != null) return errorResponse;
+
         try {
-            // Extract the token from the Authorization header
             String jwtToken = authorizationHeader.startsWith("Bearer ") ? authorizationHeader.substring(7) : authorizationHeader;
-
-            logger.info("📝 POST request received to create a donation: {}", donationDto);
-
-            // Pass the JWT token to the service method
             Donation createdDonation = donationService.createDonation(donationDto, jwtToken);
-
             return ResponseEntity.ok(createdDonation);
         } catch (Exception e) {
-            logger.error("❌ Error occurred while creating donation: {}", e.getMessage(), e);
-
-            // Handle specific exceptions (e.g., association not found, token missing, etc.)
-            String errorMessage = e instanceof RuntimeException ? e.getMessage() : "Unexpected error occurred";
-            return ResponseEntity.internalServerError().body("Error: " + errorMessage);
+            return ResponseEntity.internalServerError().body("Error: " + e.getMessage());
         }
     }
-
-
 
 
     @PutMapping("/update/{id}")
-    public ResponseEntity<?> updateDonation(
-            @PathVariable Long id,
-            @RequestBody @Valid DonationDto donationDto,
-            @RequestHeader("Authorization") String authorizationHeader) {
+    public ResponseEntity<?> updateDonation(@PathVariable Long id,
+                                            @Valid @RequestBody DonationDto donationDto,
+                                            BindingResult bindingResult,
+                                            @RequestHeader("Authorization") String authorizationHeader) {
+
+        ResponseEntity<?> errorResponse = ValidationUtils.handleValidationErrors(bindingResult);
+        if (errorResponse != null) return errorResponse;
 
         try {
-            logger.info("🔄 PUT request received to update donation with ID: {}", id);
-
-            // Validate Authorization header
-            if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
-                logger.warn("⛔ Invalid or missing Authorization header");
-                return ResponseEntity.badRequest().body("Invalid or missing Authorization token");
-            }
-
             String jwtToken = authorizationHeader.substring(7);
-
             Donation updatedDonation = donationService.updateDonation(id, donationDto, jwtToken);
-
-            // Convert to DTO before returning
-            DonationDto responseDto = DonationDto.fromDonation(updatedDonation);
-            return ResponseEntity.ok(responseDto);
-
+            return ResponseEntity.ok(DonationDto.fromDonation(updatedDonation));
         } catch (RuntimeException e) {
-            logger.error("❌ Error updating donation ID {}: {}", id, e.getMessage());
             return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
         } catch (Exception e) {
-            logger.error("❌ Unexpected error updating donation ID {}: {}", id, e.getMessage());
             return ResponseEntity.internalServerError().body("An unexpected error occurred");
         }
     }
+
+
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<Void> deleteDonation(@PathVariable Long id) {
         logger.info("🗑 Requête DELETE reçue pour supprimer la donation avec ID: {}", id);
         donationService.deleteDonation(id);
         return ResponseEntity.noContent().build();
     }
+    @GetMapping("/sorted-active")
+    public ResponseEntity<?> getSortedActiveDonations() {
+        try {
+            List<DonationDto> sortedDonations = donationService.getSortedActiveDonations();
+            return ResponseEntity.ok(sortedDonations);
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("❌ Error fetching donations: " + e.getMessage());
+        }
+    }
+
+
 }

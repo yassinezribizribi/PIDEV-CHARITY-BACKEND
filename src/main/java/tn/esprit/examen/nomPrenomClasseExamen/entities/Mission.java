@@ -1,11 +1,11 @@
 package tn.esprit.examen.nomPrenomClasseExamen.entities;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 
 @Getter
@@ -28,12 +28,18 @@ public class Mission implements Serializable{
     private int volunteerCount;
     private MissionStatus status;
 
-    @ManyToOne
-    @JsonIgnore // Prevent recursion here
-    Association associationMission;
+    @ManyToMany(mappedBy="missions", cascade = CascadeType.ALL)
+    private Set<Association> associations;
 
     @ManyToOne
     Crisis crisis;
+
+    @ElementCollection
+    @CollectionTable(name = "mission_tags", joinColumns = @JoinColumn(name = "mission_id"))
+    @Column(name = "tag")
+    private List<String> tags;  // You can use Set<String> if you prefer unique tags
+
+
 
 //    @OneToMany(cascade = CascadeType.ALL, mappedBy="missionsubscriber")
 //    private Set<Subscriber> subscribersMission;

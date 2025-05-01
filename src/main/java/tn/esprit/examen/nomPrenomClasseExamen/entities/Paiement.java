@@ -1,4 +1,5 @@
 package tn.esprit.examen.nomPrenomClasseExamen.entities;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -30,4 +31,12 @@ public class Paiement implements Serializable {
 
     @ManyToOne
     private CagnotteEnligne cagnotte; // 🔗 Ajout pour bien relier chaque paiement à une cagnotte
+    @ManyToOne
+
+
+    @JoinColumn(name = "idUser")
+    @JsonIgnore
+
+    private User utilisateur;
+
 }

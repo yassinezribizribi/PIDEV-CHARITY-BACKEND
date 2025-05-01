@@ -7,5 +7,6 @@ import java.util.List;
 
 public interface DonsRepository extends JpaRepository<Dons, Long> {
     List<Dons> findByDonation_IdDonation(Long donationId);
+    List<Dons> findBySubscriberDons_IdUser(Long userId);
 
 }

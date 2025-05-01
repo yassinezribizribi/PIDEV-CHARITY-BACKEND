@@ -1,7 +1,9 @@
 package tn.esprit.examen.nomPrenomClasseExamen.Repositories;
 
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.JobApplication;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.JobApplicationStatus;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.JobOffer;
@@ -9,6 +11,7 @@ import tn.esprit.examen.nomPrenomClasseExamen.entities.Subscriber;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface JobApplicationRepository extends JpaRepository<JobApplication, Long> {
 
@@ -49,4 +52,14 @@ public interface JobApplicationRepository extends JpaRepository<JobApplication, 
             JobApplicationStatus status,
             LocalDateTime date
     );
+    @EntityGraph(attributePaths = {"applicant", "jobOffer", "jobOffer.createdBy"})
+    @Query("SELECT ja FROM JobApplication ja WHERE ja.idApplication = :id")
+    Optional<JobApplication> findByIdWithDetails(@Param("id") Long id);
+
+    @EntityGraph(attributePaths = {"applicant", "jobOffer", "jobOffer.createdBy"})
+    @Query("SELECT ja FROM JobApplication ja WHERE ja.jobOffer.createdBy.idUser = :userId")
+    List<JobApplication> findApplicationsForEmployerOffers(@Param("userId") Long userId);
+    @EntityGraph(attributePaths = {"applicant", "jobOffer", "jobOffer.createdBy"})
+    @Query("SELECT ja FROM JobApplication ja WHERE ja.applicant.idUser = :applicantId")
+    List<JobApplication> findByApplicantWithDetails(@Param("applicantId") Long applicantId);
 }
