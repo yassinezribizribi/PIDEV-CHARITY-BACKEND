@@ -15,7 +15,6 @@ import java.util.Date;
 public class RequestDTO {
 
 
-
     @NotNull(message = "Request date cannot be null")
     private Date dateRequest;
 

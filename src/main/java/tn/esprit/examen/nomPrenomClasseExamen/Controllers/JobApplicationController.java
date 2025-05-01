@@ -51,6 +51,7 @@ public class JobApplicationController {
         logger.info("Fetched {} job applications for subscriber id: {}", applications.size(), subscriberId);
         return ResponseEntity.ok(applications);
     }
+
     @GetMapping("/job-offers/applications")
     public ResponseEntity<List<JobApplicationDto>> getApplicationsForUserJobOffers(
             @RequestHeader("Authorization") String token) {
@@ -98,6 +99,7 @@ public class JobApplicationController {
         logger.info("Fetched {} job applications for job offer ID: {}", applications.size(), id);
         return ResponseEntity.ok(applications);
     }
+
     @GetMapping("/my-offers/applications")
     public ResponseEntity<List<JobApplicationDto>> getApplicationsForMyOffers(
             @RequestHeader("Authorization") String token) {

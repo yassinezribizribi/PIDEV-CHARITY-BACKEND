@@ -45,6 +45,7 @@ public class JobOfferServices {
 
     /**
      * Fetch job applications for a specific job offer.
+     *
      * @param jobOfferId ID of the job offer to retrieve applications for
      * @return List of job application DTOs
      */

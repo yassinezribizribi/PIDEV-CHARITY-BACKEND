@@ -20,13 +20,18 @@ public class User implements Serializable{
     private Long idUser;
     private String firstName;
     private String lastName;
-    @NotNull
-    protected String email;
+    @Column(unique = true, nullable = false)
+    private String email;
     private String password;
     private String telephone;
     private Boolean isBanned;
     private String banreason;
     private String job;
+
+    private String location;
+
+
+
 
 
 }

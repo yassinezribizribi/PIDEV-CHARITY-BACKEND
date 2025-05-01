@@ -14,6 +14,7 @@ public class JwtResponseDto {
     private String type = "Bearer";
     private Long idUser;
     private List<String> roles;
+
     public JwtResponseDto(String token, Long idUser, List<String> roles) {
         this.token = token;
         this.idUser = idUser;

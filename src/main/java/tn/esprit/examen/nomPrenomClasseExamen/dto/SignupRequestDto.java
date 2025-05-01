@@ -23,4 +23,6 @@ public class SignupRequestDto {
     private String expertiseArea;
     private String associationRole;
     private String job;
+
+    private String location;
 }

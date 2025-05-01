@@ -17,6 +17,9 @@ public class Association implements Serializable {
     private Long idAssociation;
 
     private String associationAddress;
+
+    private Double latitude;
+    private Double longitude;
     private String associationName;
     private String description;
 

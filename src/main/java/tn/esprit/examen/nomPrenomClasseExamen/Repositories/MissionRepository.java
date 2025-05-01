@@ -9,6 +9,7 @@ import java.util.List;
 
 public interface MissionRepository extends JpaRepository<Mission, Long> {
     List<Mission> findByLocation(String location);
+
     @Query("SELECT m FROM Mission m WHERE FUNCTION('DATE', m.startDate) = :startDate")
     List<Mission> findByStartDate(@Param("startDate") String startDate);
 }
