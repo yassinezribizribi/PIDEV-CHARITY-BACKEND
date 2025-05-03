@@ -39,7 +39,7 @@ public class EmailService {
             logger.error("Erreur lors de l'envoi de l'email : " + e.getMessage(), e);
         }
     }
-
+//Event email
     public void sendReminderEmail(User subscriber, Event event) {
         MimeMessage message = javaMailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message);
@@ -75,7 +75,7 @@ public class EmailService {
             logger.error("Erreur lors de l'envoi du rappel d'email : " + e.getMessage(), e);
         }
     }
-
+//adoption email
     public void sendAdoptionConfirmationEmail(User user, Animal animal) {
         MimeMessage message = javaMailSender.createMimeMessage();
 
