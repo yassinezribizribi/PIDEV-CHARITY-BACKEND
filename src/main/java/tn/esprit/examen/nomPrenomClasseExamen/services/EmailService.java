@@ -13,7 +13,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.User;
 
+
 import java.io.File;
+
 
 @Service
 public class EmailService {
@@ -42,16 +44,21 @@ public class EmailService {
         }
     }
 
+//Event email
+
     public void sendReminderEmail(User subscriber, Event event) {
         MimeMessage message = javaMailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message);
         try {
             helper.setTo(subscriber.getEmail());
+
             helper.setSubject("Event Reminder: " + event.getTitle());
+
             String eventDateTime = event.getDateTime().toString();
             String htmlContent = "<html><body style='font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif; background-color: #f4f7fa; color: #333; margin: 0; padding: 0;'>"
                     + "<div style='max-width: 640px; margin: 40px auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1); border: 1px solid #e0e4e8;'>"
                     + "<div style='background: linear-gradient(135deg, #4a90e2, #50c9c3); padding: 20px; text-align: center;'>"
+
                     + "<img src='https://img.freepik.com/premium-vector/logo-hand-hand-charity-with-heart-middle_933533-4.jpg' alt='Logo' style='max-width: 120px; height: auto; margin-bottom: 16px; display: block; margin-left: auto; margin-right: auto;'>"
                     + "<h2 style='color: #ffffff; font-size: 24px; margin: 0; font-weight: 600;'>Event Reminder</h2>"
                     + "</div>"
@@ -63,6 +70,7 @@ public class EmailService {
                     + "<div style='text-align: center; margin: 24px 0;'>"
                     + "</div>"
                     + "<p style='font-size: 14px; color: #718096; margin: 0;'>See you soon!</p>"
+
                     + "</div>"
                     + "<footer style='background-color: #edf2f7; padding: 16px; text-align: center; font-size: 12px; color: #a0aec0;'>"
                     + "<p style='margin: 0;'>© 2025 Solidarity&Refugee</p>"
@@ -71,6 +79,7 @@ public class EmailService {
                     + "</body></html>";
             helper.setText(htmlContent, true);
             javaMailSender.send(message);
+
             logger.info("Event reminder sent to: " + subscriber.getEmail());
 
         } catch (MessagingException e) {
@@ -145,5 +154,6 @@ public class EmailService {
             e.printStackTrace();
         }
     }
+
 
 }
