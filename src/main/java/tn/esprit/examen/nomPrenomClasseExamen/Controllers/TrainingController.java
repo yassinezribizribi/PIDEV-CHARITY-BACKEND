@@ -5,9 +5,13 @@ import com.google.zxing.MultiFormatWriter;
 import com.google.zxing.WriterException;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
+import com.itextpdf.io.font.constants.StandardFonts;
 import com.itextpdf.io.image.ImageDataFactory;
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.colors.DeviceRgb;
+import com.itextpdf.kernel.font.PdfFont;
+import com.itextpdf.kernel.font.PdfFontFactory;
+import com.itextpdf.kernel.geom.AffineTransform;
 import com.itextpdf.kernel.geom.PageSize;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
@@ -16,6 +20,7 @@ import com.itextpdf.kernel.pdf.canvas.draw.ILineDrawer;
 import com.itextpdf.kernel.pdf.canvas.draw.SolidLine;
 import com.itextpdf.layout.Document;
 import com.itextpdf.layout.borders.Border;
+import com.itextpdf.layout.borders.SolidBorder;
 import com.itextpdf.layout.element.*;
 import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.layout.properties.UnitValue;
@@ -125,89 +130,131 @@ TrainingController {
         PdfDocument pdf = new PdfDocument(writer);
         Document document = new Document(pdf, PageSize.A4);
         document.setMargins(50, 50, 50, 50);
-        pdf.addNewPage(); // Important pour éviter IndexOutOfBoundsException
+        pdf.addNewPage();
 
-        // Cadre noir
+        // Cadre double (bleu marine et doré)
         PdfCanvas canvas = new PdfCanvas(pdf.getFirstPage());
         canvas.setLineWidth(2)
-                .setStrokeColor(ColorConstants.BLACK)
+                .setStrokeColor(new DeviceRgb(0, 51, 102)) // Bleu marine
                 .rectangle(36, 36, pdf.getDefaultPageSize().getWidth() - 72, pdf.getDefaultPageSize().getHeight() - 72)
                 .stroke();
+        canvas.setLineWidth(1)
+                .setStrokeColor(new DeviceRgb(191, 144, 0)) // Doré
+                .rectangle(41, 41, pdf.getDefaultPageSize().getWidth() - 82, pdf.getDefaultPageSize().getHeight() - 82)
+                .stroke();
 
-        // Logo fictif ou symbole (facultatif)
-        document.add(new Paragraph("🏛️")
-                .setFontSize(30)
+        // Bandeau supérieur (bleu marine)
+        canvas.setFillColor(new DeviceRgb(0, 51, 102))
+                .rectangle(36, pdf.getDefaultPageSize().getHeight() - 86, pdf.getDefaultPageSize().getWidth() - 72, 50)
+                .fill();
+
+        // Symbole élégant (icône de diplôme) avec marge supérieure pour éviter le décalage
+        document.add(new Paragraph("🎓")
+                .setFontSize(40)
                 .setTextAlignment(TextAlignment.CENTER)
+                .setFontColor(new DeviceRgb(191, 144, 0))
+                .setMarginTop(20) // Ajout d'une marge supérieure pour descendre le symbole
                 .setMarginBottom(10));
 
-        // Titre doré
+        // Titre doré avec une police serif
+        PdfFont titleFont = PdfFontFactory.createFont(StandardFonts.TIMES_BOLD);
         document.add(new Paragraph("CERTIFICAT DE PARTICIPATION")
+                .setFont(titleFont)
                 .setTextAlignment(TextAlignment.CENTER)
-                .setFontSize(22)
+                .setFontSize(26)
                 .setBold()
-                .setFontColor(new DeviceRgb(191, 144, 0))); // Couleur dorée
+                .setFontColor(new DeviceRgb(191, 144, 0))
+                .setMarginTop(10)); // Marge supplémentaire pour espacer du symbole
+
+        // Ligne décorative sous le titre
+        canvas.setLineWidth(0.5f)
+                .setStrokeColor(new DeviceRgb(191, 144, 0))
+                .moveTo(150, pdf.getDefaultPageSize().getHeight() - 180) // Ajustement de la position pour suivre le titre
+                .lineTo(pdf.getDefaultPageSize().getWidth() - 150, pdf.getDefaultPageSize().getHeight() - 180)
+                .stroke();
 
         // Texte d'intro
         document.add(new Paragraph("\nCe certificat est remis à")
+                .setFont(PdfFontFactory.createFont(StandardFonts.TIMES_ROMAN))
                 .setTextAlignment(TextAlignment.CENTER)
-                .setFontSize(12));
+                .setFontSize(14)
+                .setFontColor(ColorConstants.BLACK));
 
         // Nom du récipiendaire
         document.add(new Paragraph(user.getFirstName().toUpperCase() + " " + user.getLastName().toUpperCase())
+                .setFont(PdfFontFactory.createFont(StandardFonts.TIMES_BOLD))
                 .setTextAlignment(TextAlignment.CENTER)
                 .setBold()
-                .setFontSize(24)
+                .setFontSize(28)
+                .setFontColor(new DeviceRgb(0, 51, 102))
                 .setMarginBottom(10));
 
         // Description de participation
         document.add(new Paragraph("pour ses contributions à la formation :\n")
+                .setFont(PdfFontFactory.createFont(StandardFonts.TIMES_ROMAN))
                 .setTextAlignment(TextAlignment.CENTER)
-                .setFontSize(12));
+                .setFontSize(14)
+                .setFontColor(ColorConstants.BLACK));
 
         // Nom de la formation
         document.add(new Paragraph(training.getTrainingName())
+                .setFont(PdfFontFactory.createFont(StandardFonts.TIMES_ITALIC))
                 .setTextAlignment(TextAlignment.CENTER)
                 .setItalic()
-                .setFontSize(14)
+                .setFontSize(16)
+                .setFontColor(new DeviceRgb(0, 51, 102))
                 .setMarginBottom(30));
 
-        // Détails de la formation (encadré fond gris)
+        // Ligne décorative après la formation
+        canvas.setLineWidth(0.5f)
+                .setStrokeColor(new DeviceRgb(191, 144, 0))
+                .moveTo(150, pdf.getDefaultPageSize().getHeight() - 300)
+                .lineTo(pdf.getDefaultPageSize().getWidth() - 150, pdf.getDefaultPageSize().getHeight() - 300)
+                .stroke();
+
+        // Détails de la formation (encadré fond gris clair avec bordure dorée)
         Paragraph trainingDetails = new Paragraph()
                 .add("📅 Date de la session : " + training.getSessionDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + "\n")
                 .add("📚 Durée : " + training.getDuration() + " jours\n")
                 .add("🎓 Niveau : " + training.getLevel() + "\n")
                 .add("🔖 Type : " + training.getType() + "\n\n")
                 .add("📄 Description de la formation :\n" + training.getDescription())
+                .setFont(PdfFontFactory.createFont(StandardFonts.TIMES_ROMAN))
                 .setFontSize(11)
                 .setTextAlignment(TextAlignment.LEFT)
-                .setBackgroundColor(ColorConstants.LIGHT_GRAY)
+                .setBackgroundColor(new DeviceRgb(245, 245, 245)) // Gris très clair
+                .setBorder(new SolidBorder(new DeviceRgb(191, 144, 0), 1))
                 .setPadding(10)
+                .setMarginLeft(50)
+                .setMarginRight(50)
                 .setMarginBottom(30);
         document.add(trainingDetails);
 
         // Date d’émission
         String dateNow = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
         document.add(new Paragraph("Fait le : " + dateNow)
+                .setFont(PdfFontFactory.createFont(StandardFonts.TIMES_ROMAN))
                 .setTextAlignment(TextAlignment.CENTER)
-                .setFontSize(10)
+                .setFontSize(12)
+                .setFontColor(ColorConstants.BLACK)
                 .setMarginBottom(50));
 
         // Signatures
         Table signTable = new Table(UnitValue.createPercentArray(new float[]{1, 1}))
                 .useAllAvailableWidth();
         signTable.addCell(new Cell()
-                .add(new Paragraph("Signature").setBold())
-                .add(new Paragraph("................"))
+                .add(new Paragraph("Signature").setFont(PdfFontFactory.createFont(StandardFonts.TIMES_BOLD)).setBold())
+                .add(new Paragraph("_________________________"))
                 .setTextAlignment(TextAlignment.CENTER)
                 .setBorder(Border.NO_BORDER));
         signTable.addCell(new Cell()
-                .add(new Paragraph("Responsable de formation").setBold())
-                .add(new Paragraph("................"))
+                .add(new Paragraph("Responsable de formation").setFont(PdfFontFactory.createFont(StandardFonts.TIMES_BOLD)).setBold())
+                .add(new Paragraph("_________________________"))
                 .setTextAlignment(TextAlignment.CENTER)
                 .setBorder(Border.NO_BORDER));
         document.add(signTable);
 
-        // QR Code
+        // QR Code (agrandi et centré)
         String certId = "CERT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         String qrText =
                 "Formation : " + training.getTrainingName() + "\n" +
@@ -218,15 +265,30 @@ TrainingController {
 
         ByteArrayOutputStream qrOutput = new ByteArrayOutputStream();
         try {
-            BitMatrix matrix = new MultiFormatWriter().encode(qrText, BarcodeFormat.QR_CODE, 80, 80);
+            BitMatrix matrix = new MultiFormatWriter().encode(qrText, BarcodeFormat.QR_CODE, 120, 120); // Taille augmentée à 120x120
             MatrixToImageWriter.writeToStream(matrix, "PNG", qrOutput);
         } catch (WriterException e) {
             throw new RuntimeException("Erreur lors de la génération du QR Code", e);
         }
 
         Image qrCode = new Image(ImageDataFactory.create(qrOutput.toByteArray()));
-        qrCode.setFixedPosition(460, 100);
+        float pageWidth = pdf.getDefaultPageSize().getWidth(); // 595 pour A4
+        float qrWidth = 120; // Taille du QR code en points
+        float xPosition = (pageWidth - qrWidth) / 2; // Calcul pour centrer horizontalement
+        qrCode.setFixedPosition(xPosition, 80); // Position centrée horizontalement, 80 points du bas
         document.add(qrCode);
+
+        // Filigrane
+        PdfFont watermarkFont = PdfFontFactory.createFont(StandardFonts.HELVETICA);
+        canvas.saveState();
+        canvas.setFillColor(new DeviceRgb(200, 200, 200));
+        canvas.beginText()
+                .setFontAndSize(watermarkFont, 50)
+                .setTextMatrix(AffineTransform.getRotateInstance(Math.toRadians(45), 300, 400))
+                .moveText(300, 400)
+                .showText("SoliRefuge")
+                .endText();
+        canvas.restoreState();
 
         document.close();
 
@@ -238,7 +300,6 @@ TrainingController {
                 .headers(headers)
                 .body(baos.toByteArray());
     }
-
 
     // 🟠 Ajouter un abonné à une formation
     @PostMapping("/{trainingId}/add-subscriber/{userId}")

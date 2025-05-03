@@ -24,7 +24,7 @@ public class ReminderService {
     EmailService emailService;
 
 
-    @Scheduled(cron = "0 * * * * ?")
+   //@Scheduled(cron = "0 * * * * ?")
     public void sendEventReminders() {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime twoDaysFromNow = now.plusDays(2);

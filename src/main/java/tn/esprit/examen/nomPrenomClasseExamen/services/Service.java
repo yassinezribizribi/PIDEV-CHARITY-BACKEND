@@ -7,11 +7,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.server.ResponseStatusException;
 import tn.esprit.examen.nomPrenomClasseExamen.Repositories.CommentRepo;
 import tn.esprit.examen.nomPrenomClasseExamen.Repositories.PostsRepository;
 import tn.esprit.examen.nomPrenomClasseExamen.Repositories.UserRepository;
@@ -36,16 +34,21 @@ PostsRepository postRepo;
 
 
     @Override
-    public Comment addCommentandAffectToPost(Long id, Long iduser ,Comment comment) {
+    public Comment addCommentandAffectToPost(Long id, Long iduser, Comment comment) {
         User user = userRepo.findById(iduser).get();
         Posts post = postRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Post not found with ID: " + id));
+
+        if (containsBadWords(comment.getDescriptionComment())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Votre commentaire contient des mots inappropriés.");
+        }
+
         comment.setPost(post);
         comment.setUser(user);
-        String filteredContent = filterBadWordsUsingAPI(comment.getDescriptionComment());
-        comment.setDescriptionComment(filteredContent);
         return commentRepo.save(comment);
     }
+
+
 
     @Override
     public List<Comment> findAll() {
@@ -71,18 +74,33 @@ PostsRepository postRepo;
 
     private final RestTemplate restTemplate = new RestTemplate();
     private static final String FILTER_API_URL = "https://www.purgomalum.com/service/json?text=";
+    private static final String ADD_BAD_WORD = "&add=khaled";
 
     private String filterBadWordsUsingAPI(String content) {
         if (content == null || content.isEmpty()) return "";
 
         ResponseEntity<Map> response = restTemplate.exchange(
-                FILTER_API_URL + content,
+                FILTER_API_URL + content + ADD_BAD_WORD,
                 HttpMethod.GET,
                 new HttpEntity<>(new HttpHeaders()),
                 Map.class
         );
 
         return response.getBody().get("result").toString();
+    }
+
+    private boolean containsBadWords(String content) {
+        if (content == null || content.isEmpty()) return false;
+
+        ResponseEntity<Map> response = restTemplate.exchange(
+                FILTER_API_URL + content + ADD_BAD_WORD,
+                HttpMethod.GET,
+                new HttpEntity<>(new HttpHeaders()),
+                Map.class
+        );
+
+        String filtered = response.getBody().get("result").toString();
+        return !filtered.equals(content); // S'il y a une différence => bad word détecté
     }
 
 

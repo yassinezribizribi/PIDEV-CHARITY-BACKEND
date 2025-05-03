@@ -1,6 +1,7 @@
 package tn.esprit.examen.nomPrenomClasseExamen.services;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import tn.esprit.examen.nomPrenomClasseExamen.Repositories.AnimalRepository;
 import tn.esprit.examen.nomPrenomClasseExamen.Repositories.DemandeAnimalRepository;
@@ -33,6 +34,9 @@ public class DemandeAnimalService {
         return demandeRepo.save(demande);
     }
 
+/*
+    @Autowired
+    private EmailService emailService;
     public void accepterDemande(Long demandeId) {
         DemandeAnimal demande = demandeRepo.findById(demandeId)
                 .orElseThrow(() -> new RuntimeException("Demande not found"));
@@ -43,7 +47,29 @@ public class DemandeAnimalService {
         Animal animal = demande.getAnimal();
         animal.setIsAdopted(true);
         animalRepo.save(animal);
+
+        // ✅ Récupération de l'utilisateur et envoi de mail
+        User user = demande.getUser();
+        emailService.sendAdoptionConfirmationEmail(user, animal);
     }
+
+ */
+    public void accepterDemande(Long demandeId) {
+    DemandeAnimal demande = demandeRepo.findById(demandeId)
+            .orElseThrow(() -> new RuntimeException("Demande not found"));
+
+    demande.setAccepted(true);
+    demandeRepo.save(demande);
+
+    Animal animal = demande.getAnimal();
+    animal.setIsAdopted(true);
+    animalRepo.save(animal);
+}
+
+
+
+
+
     public List<DemandeAnimal> getall(){
         return demandeRepo.findAll();
     }

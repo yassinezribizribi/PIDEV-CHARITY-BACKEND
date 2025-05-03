@@ -3,6 +3,7 @@ package tn.esprit.examen.nomPrenomClasseExamen.services;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import tn.esprit.examen.nomPrenomClasseExamen.Repositories.SubscriberRepository;
 import tn.esprit.examen.nomPrenomClasseExamen.Repositories.TrainingRepository;
@@ -11,6 +12,7 @@ import tn.esprit.examen.nomPrenomClasseExamen.entities.Role;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Subscriber;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Training;
 
+import java.time.LocalDate;
 import java.util.*;
 
 @Slf4j
@@ -118,6 +120,19 @@ public class TrainigServices implements ITrainingServices {
         } else {
             throw new IllegalArgumentException("L'abonné est déjà inscrit à cette formation.");
         }
+    }
+    // Méthode planifiée exécutée tous les jours à 1h du matin
+    @Scheduled(cron = "0 0 1 * * *")
+    public void updateTrainingStatuses() {
+        LocalDate today = LocalDate.now();
+        List<Training> trainings = trainingRepository.findBySessionDateBeforeAndStatus(today, "upcoming");
+
+        for (Training training : trainings) {
+            training.setStatus("finished");
+            trainingRepository.save(training);
+        }
+
+        System.out.println(" Mise à jour automatique des statuts de formations terminées !");
     }
 
 }
