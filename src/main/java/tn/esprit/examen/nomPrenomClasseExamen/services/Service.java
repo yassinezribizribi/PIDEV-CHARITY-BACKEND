@@ -74,7 +74,11 @@ PostsRepository postRepo;
 
     private final RestTemplate restTemplate = new RestTemplate();
     private static final String FILTER_API_URL = "https://www.purgomalum.com/service/json?text=";
+
+    private static final String ADD_BAD_WORD = "&add=voiture";
+
     private static final String ADD_BAD_WORD = "&add=khaled";
+
 
     private String filterBadWordsUsingAPI(String content) {
         if (content == null || content.isEmpty()) return "";

@@ -36,9 +36,12 @@ public class Posts implements Serializable{
     private Set<PostAction> postActions;
 
     private Long likesCount = Long.valueOf(0);
+
+
     @OneToMany(cascade = CascadeType.ALL, mappedBy="post", fetch = FetchType.LAZY)
     @JsonIgnoreProperties("post") // pour éviter la récursion infinie
     private List<Comment> Comments;
+
     @ManyToMany
     @JsonIgnore
     @JoinTable(
@@ -56,6 +59,7 @@ public class Posts implements Serializable{
         return likedByUser;
     }
 
+
     public void setLikedByUser(boolean likedByUser) {
         this.likedByUser = likedByUser;
     }
@@ -63,6 +67,5 @@ public class Posts implements Serializable{
     @ManyToOne(optional = true)
     @JsonIgnore
     Subscription subscription;
-
 
 }

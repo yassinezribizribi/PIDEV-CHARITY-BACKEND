@@ -34,7 +34,9 @@ public class DemandeAnimalService {
         return demandeRepo.save(demande);
     }
 
-/*
+
+
+
     @Autowired
     private EmailService emailService;
     public void accepterDemande(Long demandeId) {
@@ -53,7 +55,8 @@ public class DemandeAnimalService {
         emailService.sendAdoptionConfirmationEmail(user, animal);
     }
 
- */
+
+
     public void accepterDemande(Long demandeId) {
     DemandeAnimal demande = demandeRepo.findById(demandeId)
             .orElseThrow(() -> new RuntimeException("Demande not found"));
@@ -65,6 +68,7 @@ public class DemandeAnimalService {
     animal.setIsAdopted(true);
     animalRepo.save(animal);
 }
+
 
 
 

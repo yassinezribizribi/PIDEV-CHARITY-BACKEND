@@ -132,55 +132,65 @@ TrainingController {
         document.setMargins(50, 50, 50, 50);
         pdf.addNewPage();
 
-        // Cadre double (bleu marine et doré)
+
+        // Double border (navy blue and gold)
         PdfCanvas canvas = new PdfCanvas(pdf.getFirstPage());
         canvas.setLineWidth(2)
-                .setStrokeColor(new DeviceRgb(0, 51, 102)) // Bleu marine
+                .setStrokeColor(new DeviceRgb(0, 51, 102)) // Navy blue
                 .rectangle(36, 36, pdf.getDefaultPageSize().getWidth() - 72, pdf.getDefaultPageSize().getHeight() - 72)
                 .stroke();
         canvas.setLineWidth(1)
-                .setStrokeColor(new DeviceRgb(191, 144, 0)) // Doré
+                .setStrokeColor(new DeviceRgb(191, 144, 0)) // Gold
                 .rectangle(41, 41, pdf.getDefaultPageSize().getWidth() - 82, pdf.getDefaultPageSize().getHeight() - 82)
                 .stroke();
 
-        // Bandeau supérieur (bleu marine)
+        // Top banner (navy blue)
+
         canvas.setFillColor(new DeviceRgb(0, 51, 102))
                 .rectangle(36, pdf.getDefaultPageSize().getHeight() - 86, pdf.getDefaultPageSize().getWidth() - 72, 50)
                 .fill();
 
-        // Symbole élégant (icône de diplôme) avec marge supérieure pour éviter le décalage
+
+        // Elegant symbol (diploma icon) with top margin to avoid overlap
+
         document.add(new Paragraph("🎓")
                 .setFontSize(40)
                 .setTextAlignment(TextAlignment.CENTER)
                 .setFontColor(new DeviceRgb(191, 144, 0))
-                .setMarginTop(20) // Ajout d'une marge supérieure pour descendre le symbole
+
+                .setMarginTop(20) // Added top margin to lower the symbol
                 .setMarginBottom(10));
 
-        // Titre doré avec une police serif
+        // Gold title with serif font
         PdfFont titleFont = PdfFontFactory.createFont(StandardFonts.TIMES_BOLD);
-        document.add(new Paragraph("CERTIFICAT DE PARTICIPATION")
+        document.add(new Paragraph("CERTIFICATE OF PARTICIPATION")
+
                 .setFont(titleFont)
                 .setTextAlignment(TextAlignment.CENTER)
                 .setFontSize(26)
                 .setBold()
                 .setFontColor(new DeviceRgb(191, 144, 0))
-                .setMarginTop(10)); // Marge supplémentaire pour espacer du symbole
 
-        // Ligne décorative sous le titre
+                .setMarginTop(10)); // Extra margin to space from the symbol
+
+        // Decorative line below the title
         canvas.setLineWidth(0.5f)
                 .setStrokeColor(new DeviceRgb(191, 144, 0))
-                .moveTo(150, pdf.getDefaultPageSize().getHeight() - 180) // Ajustement de la position pour suivre le titre
+                .moveTo(150, pdf.getDefaultPageSize().getHeight() - 180) // Adjusted position to follow the title
                 .lineTo(pdf.getDefaultPageSize().getWidth() - 150, pdf.getDefaultPageSize().getHeight() - 180)
                 .stroke();
 
-        // Texte d'intro
-        document.add(new Paragraph("\nCe certificat est remis à")
+        // Introductory text
+        document.add(new Paragraph("\nThis certificate is awarded to")
+
                 .setFont(PdfFontFactory.createFont(StandardFonts.TIMES_ROMAN))
                 .setTextAlignment(TextAlignment.CENTER)
                 .setFontSize(14)
                 .setFontColor(ColorConstants.BLACK));
 
-        // Nom du récipiendaire
+
+        // Recipient's name
+
         document.add(new Paragraph(user.getFirstName().toUpperCase() + " " + user.getLastName().toUpperCase())
                 .setFont(PdfFontFactory.createFont(StandardFonts.TIMES_BOLD))
                 .setTextAlignment(TextAlignment.CENTER)
@@ -189,14 +199,18 @@ TrainingController {
                 .setFontColor(new DeviceRgb(0, 51, 102))
                 .setMarginBottom(10));
 
-        // Description de participation
-        document.add(new Paragraph("pour ses contributions à la formation :\n")
+<
+        // Participation description
+        document.add(new Paragraph("for their contributions to the training:\n")
+
                 .setFont(PdfFontFactory.createFont(StandardFonts.TIMES_ROMAN))
                 .setTextAlignment(TextAlignment.CENTER)
                 .setFontSize(14)
                 .setFontColor(ColorConstants.BLACK));
 
-        // Nom de la formation
+
+        // Training name
+
         document.add(new Paragraph(training.getTrainingName())
                 .setFont(PdfFontFactory.createFont(StandardFonts.TIMES_ITALIC))
                 .setTextAlignment(TextAlignment.CENTER)
@@ -205,24 +219,27 @@ TrainingController {
                 .setFontColor(new DeviceRgb(0, 51, 102))
                 .setMarginBottom(30));
 
-        // Ligne décorative après la formation
+
+        // Decorative line after the training
+
         canvas.setLineWidth(0.5f)
                 .setStrokeColor(new DeviceRgb(191, 144, 0))
                 .moveTo(150, pdf.getDefaultPageSize().getHeight() - 300)
                 .lineTo(pdf.getDefaultPageSize().getWidth() - 150, pdf.getDefaultPageSize().getHeight() - 300)
                 .stroke();
 
-        // Détails de la formation (encadré fond gris clair avec bordure dorée)
+        // Training details (boxed with light gray background and gold border)
         Paragraph trainingDetails = new Paragraph()
-                .add("📅 Date de la session : " + training.getSessionDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + "\n")
-                .add("📚 Durée : " + training.getDuration() + " jours\n")
-                .add("🎓 Niveau : " + training.getLevel() + "\n")
-                .add("🔖 Type : " + training.getType() + "\n\n")
-                .add("📄 Description de la formation :\n" + training.getDescription())
+                .add("📅 Session Date: " + training.getSessionDate().format(DateTimeFormatter.ofPattern("MM/dd/yyyy")) + "\n")
+                .add("📚 Duration: " + training.getDuration() + " days\n")
+                .add("🎓 Level: " + training.getLevel() + "\n")
+                .add("🔖 Type: " + training.getType() + "\n\n")
+                .add("📄 Training Description:\n" + training.getDescription())
                 .setFont(PdfFontFactory.createFont(StandardFonts.TIMES_ROMAN))
                 .setFontSize(11)
                 .setTextAlignment(TextAlignment.LEFT)
-                .setBackgroundColor(new DeviceRgb(245, 245, 245)) // Gris très clair
+                .setBackgroundColor(new DeviceRgb(245, 245, 245)) // Very light gray
+
                 .setBorder(new SolidBorder(new DeviceRgb(191, 144, 0), 1))
                 .setPadding(10)
                 .setMarginLeft(50)
@@ -230,9 +247,12 @@ TrainingController {
                 .setMarginBottom(30);
         document.add(trainingDetails);
 
-        // Date d’émission
-        String dateNow = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-        document.add(new Paragraph("Fait le : " + dateNow)
+
+        // Issuance date
+        String dateNow = LocalDate.now().format(DateTimeFormatter.ofPattern("MM/dd/yyyy"));
+        document.add(new Paragraph("Issued on: " + dateNow)
+
+
                 .setFont(PdfFontFactory.createFont(StandardFonts.TIMES_ROMAN))
                 .setTextAlignment(TextAlignment.CENTER)
                 .setFontSize(12)
@@ -248,37 +268,40 @@ TrainingController {
                 .setTextAlignment(TextAlignment.CENTER)
                 .setBorder(Border.NO_BORDER));
         signTable.addCell(new Cell()
-                .add(new Paragraph("Responsable de formation").setFont(PdfFontFactory.createFont(StandardFonts.TIMES_BOLD)).setBold())
+
+                .add(new Paragraph("Training Manager").setFont(PdfFontFactory.createFont(StandardFonts.TIMES_BOLD)).setBold())
+
                 .add(new Paragraph("_________________________"))
                 .setTextAlignment(TextAlignment.CENTER)
                 .setBorder(Border.NO_BORDER));
         document.add(signTable);
 
-        // QR Code (agrandi et centré)
+        // QR Code (enlarged and centered)
         String certId = "CERT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         String qrText =
-                "Formation : " + training.getTrainingName() + "\n" +
-                        "Date : " + dateNow + "\n" +
-                        "Nom : " + user.getFirstName() + " " + user.getLastName() + "\n" +
-                        "Email : " + user.getEmail() + "\n" +
-                        "ID : " + certId;
+                "Training: " + training.getTrainingName() + "\n" +
+                        "Date: " + dateNow + "\n" +
+                        "Name: " + user.getFirstName() + " " + user.getLastName() + "\n" +
+                        "Email: " + user.getEmail() + "\n" +
+                        "ID: " + certId;
 
         ByteArrayOutputStream qrOutput = new ByteArrayOutputStream();
         try {
-            BitMatrix matrix = new MultiFormatWriter().encode(qrText, BarcodeFormat.QR_CODE, 120, 120); // Taille augmentée à 120x120
+            BitMatrix matrix = new MultiFormatWriter().encode(qrText, BarcodeFormat.QR_CODE, 120, 120); // Increased size to 120x120
             MatrixToImageWriter.writeToStream(matrix, "PNG", qrOutput);
         } catch (WriterException e) {
-            throw new RuntimeException("Erreur lors de la génération du QR Code", e);
+            throw new RuntimeException("Error generating QR Code", e);
         }
 
         Image qrCode = new Image(ImageDataFactory.create(qrOutput.toByteArray()));
-        float pageWidth = pdf.getDefaultPageSize().getWidth(); // 595 pour A4
-        float qrWidth = 120; // Taille du QR code en points
-        float xPosition = (pageWidth - qrWidth) / 2; // Calcul pour centrer horizontalement
-        qrCode.setFixedPosition(xPosition, 80); // Position centrée horizontalement, 80 points du bas
+        float pageWidth = pdf.getDefaultPageSize().getWidth(); // 595 for A4
+        float qrWidth = 120; // QR code size in points
+        float xPosition = (pageWidth - qrWidth) / 2; // Calculation to center horizontally
+        qrCode.setFixedPosition(xPosition, 80); // Centered horizontally, 80 points from the bottom
         document.add(qrCode);
 
-        // Filigrane
+        // Watermark
+
         PdfFont watermarkFont = PdfFontFactory.createFont(StandardFonts.HELVETICA);
         canvas.saveState();
         canvas.setFillColor(new DeviceRgb(200, 200, 200));
@@ -294,7 +317,9 @@ TrainingController {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_PDF);
-        headers.setContentDispositionFormData("filename", "certificat_" + user.getIdUser() + ".pdf");
+
+        headers.setContentDispositionFormData("filename", "certificate_" + user.getIdUser() + ".pdf");
+
 
         return ResponseEntity.ok()
                 .headers(headers)
