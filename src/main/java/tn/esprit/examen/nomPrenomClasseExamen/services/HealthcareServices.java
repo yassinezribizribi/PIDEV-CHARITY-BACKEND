@@ -1,98 +1,118 @@
 package tn.esprit.examen.nomPrenomClasseExamen.services;
 
 import jakarta.transaction.Transactional;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import tn.esprit.examen.nomPrenomClasseExamen.Repositories.HealthcareRepository;
+import tn.esprit.examen.nomPrenomClasseExamen.Repositories.SubscriberRepository;
 import tn.esprit.examen.nomPrenomClasseExamen.dto.HealthcareDTO;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Healthcare;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.HealthcareStatus;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Subscriber;
-import tn.esprit.examen.nomPrenomClasseExamen.Repositories.HealthcareRepository;
-import tn.esprit.examen.nomPrenomClasseExamen.Repositories.SubscriberRepository;
-
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
-@Slf4j
 @Service
+@RequiredArgsConstructor
 public class HealthcareServices implements IHealthcareServices {
 
-    @Autowired
-    private HealthcareRepository healthcareRepository;
+    private final HealthcareRepository healthcareRepository;
+    private final SubscriberRepository subscriberRepository;
+    private final NotificationService notificationService;
 
-    @Autowired
-    private SubscriberRepository subscriberRepository;
-
-    // ✅ Ajouter un soin
     @Transactional
     @Override
-    public Healthcare addHealthcare(HealthcareDTO healthcareDTO) {
-        // ✅ Vérifier si le patient existe
-        Subscriber subscriber = subscriberRepository.findById(healthcareDTO.getSubscriberId())
-                .orElseThrow(() -> new RuntimeException("❌ Patient (Subscriber) non trouvé !"));
+    public Healthcare addHealthcare(HealthcareDTO dto) {
+        Subscriber patient = subscriberRepository.findById(dto.getSubscriberId())
+                .orElseThrow(() -> new RuntimeException("❌ Patient introuvable !"));
+
+        Subscriber doctor = subscriberRepository.findAll().stream()
+                .filter(u -> "Médecin".equalsIgnoreCase(u.getJob()))
+                .findFirst()
+                .orElse(null);
 
         Healthcare healthcare = new Healthcare();
-        healthcare.setSubscriber(subscriber); // ✅ Associe le patient
+        healthcare.setSubscriber(patient);
+        healthcare.setDoctor(doctor);
+        healthcare.setHistory(dto.getHistory());
+        healthcare.setTreatmentPlan(dto.getTreatmentPlan());
+        healthcare.setTerminalDisease(dto.getTerminalDisease());
+        healthcare.setBookingDate(dto.getBookingDate());
         healthcare.setStatus(HealthcareStatus.PENDING);
-        healthcare.setHistory(healthcareDTO.getHistory());
-        healthcare.setBookingDate(healthcareDTO.getBookingDate()); // ✅ BookingDate est déjà un Date
+        healthcare.setMeetingUrl("https://meet.jit.si/" + UUID.randomUUID());
+
+        notificationService.sendHealthcareUpdateNotification(healthcare);
+        notificationService.sendVideoCallNotification(healthcare);
 
         return healthcareRepository.save(healthcare);
     }
 
-    // ✅ Modifier un soin
     @Transactional
     @Override
-    public Healthcare updateHealthcare(Long id, HealthcareDTO healthcareDTO) {
+    public Healthcare updateHealthcare(Long id, HealthcareDTO dto) {
         Healthcare healthcare = healthcareRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("❌ Traitement non trouvé !"));
+                .orElseThrow(() -> new RuntimeException("❌ Soin non trouvé avec l'ID : " + id));
 
-        healthcare.setHistory(healthcareDTO.getHistory());
-        healthcare.setBookingDate(healthcareDTO.getBookingDate()); // ✅ BookingDate est déjà un Date
+        healthcare.setTerminalDisease(dto.getTerminalDisease());
+        healthcare.setTreatmentPlan(dto.getTreatmentPlan());
+        healthcare.setBookingDate(dto.getBookingDate());
+        healthcare.setStatus(HealthcareStatus.valueOf(dto.getStatus()));
 
+        if (dto.getDoctorId() != null) {
+            Subscriber doctor = subscriberRepository.findById(dto.getDoctorId())
+                    .orElseThrow(() -> new RuntimeException("❌ Médecin introuvable !"));
+            healthcare.setDoctor(doctor);
+        }
+
+        notificationService.sendHealthcareUpdateNotification(healthcare);
         return healthcareRepository.save(healthcare);
-
     }
 
-    // ✅ Modifier uniquement le statut et la date
     @Transactional
     @Override
-    public Healthcare updateHealthcareStatus(Long healthcareId, String status, Date bookingDate) {
-        Healthcare healthcare = healthcareRepository.findById(healthcareId)
-                .orElseThrow(() -> new RuntimeException("❌ Soin non trouvé !"));
+    public Healthcare updateHealthcareStatus(Long id, String status, Date bookingDate) {
+        Healthcare healthcare = healthcareRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("❌ Rendez-vous introuvable !"));
 
-        try {
-            HealthcareStatus newStatus = HealthcareStatus.valueOf(status.toUpperCase());
-            healthcare.setStatus(newStatus);
-            healthcare.setBookingDate(bookingDate); // ✅ BookingDate est déjà un Date
+        healthcare.setStatus(HealthcareStatus.valueOf(status));
+        healthcare.setBookingDate(bookingDate);
 
-            return healthcareRepository.save(healthcare);
-        } catch (IllegalArgumentException e) {
-            throw new RuntimeException("❌ Statut invalide ! Utilisez PENDING, IN_PROGRESS ou COMPLETED.");
-        }
+        notificationService.sendHealthcareUpdateNotification(healthcare);
+        return healthcareRepository.save(healthcare);
     }
 
-    // ✅ Supprimer un soin
     @Transactional
     @Override
     public void deleteHealthcare(Long id) {
-        if (!healthcareRepository.existsById(id)) {
-            throw new RuntimeException("❌ Traitement non trouvé !");
-        }
+        if (!healthcareRepository.existsById(id))
+            throw new RuntimeException("❌ Soin introuvable !");
         healthcareRepository.deleteById(id);
     }
 
-    // ✅ Récupérer un soin par ID
     @Override
     public Optional<Healthcare> getHealthcareById(Long id) {
         return healthcareRepository.findById(id);
     }
 
-    // ✅ Récupérer tous les soins
     @Override
-    public List<Healthcare> getAllHealthcare() {
-        return healthcareRepository.findAll();
+    public List<HealthcareDTO> getAllHealthcare() {
+        return healthcareRepository.findAll().stream().map(h -> {
+            HealthcareDTO dto = new HealthcareDTO();
+            dto.setId(h.getIdHealthcare());
+            dto.setHistory(h.getHistory());
+            dto.setTreatmentPlan(h.getTreatmentPlan());
+            dto.setTerminalDisease(h.getTerminalDisease());
+            dto.setBookingDate(h.getBookingDate());
+            dto.setStatus(h.getStatus().name());
+            dto.setMeetingUrl(h.getMeetingUrl());
+            if (h.getSubscriber() != null)
+                dto.setSubscriberId(h.getSubscriber().getIdUser());
+            if (h.getDoctor() != null)
+                dto.setDoctorId(h.getDoctor().getIdUser());
+            return dto;
+        }).collect(Collectors.toList());
     }
 }

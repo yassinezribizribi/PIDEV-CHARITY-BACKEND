@@ -5,11 +5,13 @@ import java.util.Date;
 
 @Data
 public class HealthcareDTO {
+    private Long id;
     private String history;
     private String treatmentPlan;
     private String terminalDisease;
     private Date bookingDate;
-    private Long subscriberId;  // ID du patient
-    private Long doctorId;      // ID du médecin
-    private String status;      // ✅ Ajout du statut sous forme de String
+    private String meetingUrl;
+    private Long subscriberId;
+    private Long doctorId;
+    private String status;
 }

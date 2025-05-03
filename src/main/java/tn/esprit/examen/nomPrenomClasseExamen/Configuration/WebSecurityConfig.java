@@ -39,8 +39,12 @@ public class WebSecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/testimonials/images/**").permitAll() // 👈 Permet l'accès public aux images
                         .requestMatchers(HttpMethod.POST, "/api/testimonials").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/testimonials/all").authenticated()
+
+
+
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exception -> exception

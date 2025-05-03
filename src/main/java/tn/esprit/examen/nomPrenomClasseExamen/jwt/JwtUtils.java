@@ -9,6 +9,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.RequestContextHolder;
+
 import tn.esprit.examen.nomPrenomClasseExamen.services.SubDetailsImpl;
 
 import java.nio.charset.StandardCharsets;
@@ -75,6 +78,24 @@ public class JwtUtils {
         } catch (JwtException e) {
             logger.error("❌ JWT validation failed: {}", e.getMessage());
             return false;
+        }
+    }
+
+    // ✅ Cette méthode te permet de récupérer l'idUser sans passer manuellement le token
+    public Long getCurrentUserId() {
+        try {
+            RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
+            if (requestAttributes == null) throw new RuntimeException("Aucune requête HTTP active");
+
+            String authHeader = (String) requestAttributes.getAttribute("Authorization", RequestAttributes.SCOPE_REQUEST);
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                throw new RuntimeException("⛔ Token JWT manquant ou mal formaté");
+            }
+            String token = authHeader.substring(7).trim();
+            return getUserIdFromJwtToken(token);
+        } catch (Exception e) {
+            logger.error("Erreur lors de la récupération de l'utilisateur courant : {}", e.getMessage());
+            throw new RuntimeException("Impossible d'extraire l'utilisateur courant depuis le token");
         }
     }
 }

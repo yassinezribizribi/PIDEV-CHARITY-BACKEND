@@ -1,15 +1,22 @@
+// ✅ CONTROLLER CORRIGÉ
 package tn.esprit.examen.nomPrenomClasseExamen.Controllers;
 
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import tn.esprit.examen.nomPrenomClasseExamen.dto.TestimonialDTO;
 import tn.esprit.examen.nomPrenomClasseExamen.jwt.JwtUtils;
 import tn.esprit.examen.nomPrenomClasseExamen.services.ITestimonialServices;
+import tn.esprit.examen.nomPrenomClasseExamen.services.TranscriptionServices;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -17,6 +24,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -27,152 +35,162 @@ public class TestimonialController {
 
     private final ITestimonialServices testimonialService;
     private final JwtUtils jwtUtils;
+    private final TranscriptionServices transcriptionService;
+
     private static final Logger logger = LoggerFactory.getLogger(TestimonialController.class);
     private static final String UPLOAD_DIR = "C:/temp/uploads/";
 
-    /** ✅ Ajouter un témoignage */
     @PostMapping
     @PreAuthorize("hasAnyRole('ROLE_ASSOCIATION_MEMBER', 'ROLE_VOLUNTEER', 'ROLE_REFUGEE', 'ROLE_MENTOR')")
     public ResponseEntity<?> createTestimonial(@RequestBody TestimonialDTO testimonialDTO,
-                                               @RequestHeader("Authorization") String token) {
-        logger.info("📩 Ajout de témoignage reçu.");
-
-        // 🚀 Vérification du token
-        if (token == null || token.length() < 10) {
-            logger.error("⛔ Token JWT manquant ou invalide !");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("⛔ Token JWT manquant ou invalide !");
-        }
-
-        logger.info("🔑 Token reçu: " + token.substring(0, 20) + "...");
-
+                                               @RequestHeader("Authorization") String tokenHeader) {
         try {
-            // 🔹 Traitement des images Base64
-            if (testimonialDTO.getBeforePhotoBase64() != null) {
+            String token = tokenHeaderToToken(tokenHeader);
+            if (!jwtUtils.validateJwtToken(token))
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("⛔ Token JWT invalide !");
+
+            if (testimonialDTO.getBeforePhotoBase64() != null && !testimonialDTO.getBeforePhotoBase64().isEmpty())
                 testimonialDTO.setBeforePhotoPath(processImage(testimonialDTO.getBeforePhotoBase64(), "before"));
-            }
 
-            if (testimonialDTO.getAfterPhotoBase64() != null) {
+            if (testimonialDTO.getAfterPhotoBase64() != null && !testimonialDTO.getAfterPhotoBase64().isEmpty())
                 testimonialDTO.setAfterPhotoPath(processImage(testimonialDTO.getAfterPhotoBase64(), "after"));
-            }
 
-            return ResponseEntity.ok(testimonialService.addTestimonial(testimonialDTO, token));
-
-        } catch (RuntimeException e) {
-            logger.error("❌ Erreur lors du stockage des fichiers : {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur stockage fichiers: " + e.getMessage());
+            TestimonialDTO savedDto = testimonialService.addTestimonial(testimonialDTO, token);
+            return ResponseEntity.ok(savedDto);
+        } catch (Exception e) {
+            logger.error("❌ Erreur lors de l'ajout du témoignage : {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur : " + e.getMessage());
         }
     }
 
-    /** ✅ Récupérer tous les témoignages */
-    @GetMapping("/all")
-    public ResponseEntity<List<TestimonialDTO>> getAllTestimonials() {
-        return ResponseEntity.ok(testimonialService.getAllTestimonials());
-    }
-
-    /** ✅ Récupérer un témoignage par ID */
-    @GetMapping("/{id}")
-    public ResponseEntity<TestimonialDTO> getTestimonialById(@PathVariable Long id) {
-        Optional<TestimonialDTO> testimonial = testimonialService.getTestimonialById(id);
-        return testimonial.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
-    }
-
-    /** ✅ Mettre à jour un témoignage */
-    @PutMapping("/{id}")
+    @PostMapping("/media")
     @PreAuthorize("hasAnyRole('ROLE_ASSOCIATION_MEMBER', 'ROLE_VOLUNTEER', 'ROLE_REFUGEE', 'ROLE_MENTOR')")
-    public ResponseEntity<TestimonialDTO> updateTestimonial(@PathVariable Long id,
-                                                            @RequestBody TestimonialDTO testimonialDTO,
-                                                            @RequestHeader("Authorization") String token) {
-        if (!isValidToken(token)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        return ResponseEntity.ok(testimonialService.updateTestimonial(id, testimonialDTO, token));
-    }
-
-    /** ✅ Supprimer un témoignage */
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ROLE_ASSOCIATION_MEMBER', 'ROLE_VOLUNTEER', 'ROLE_REFUGEE', 'ROLE_MENTOR')")
-    public ResponseEntity<Void> deleteTestimonial(@PathVariable Long id,
-                                                  @RequestHeader("Authorization") String token) {
-        if (!isValidToken(token)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        testimonialService.deleteTestimonial(id, token);
-        return ResponseEntity.noContent().build();
-    }
-
-    /** ✅ Rechercher un témoignage par mot-clé */
-    @GetMapping("/search/{keyword}")
-    public ResponseEntity<List<TestimonialDTO>> searchTestimonials(@PathVariable String keyword) {
-        List<TestimonialDTO> results = testimonialService.searchTestimonials(keyword);
-        return ResponseEntity.ok(results);
-    }
-
-    /** ✅ Vérification du token JWT */
-    private boolean isValidToken(String token) {
-        return token != null && token.startsWith("Bearer ") && jwtUtils.validateJwtToken(token.substring(7));
-    }
-
-    /** ✅ Traitement des images Base64 */
-    private String processImage(String base64Data, String prefix) {
-        if (base64Data == null || base64Data.isEmpty()) return null;
-
+    public ResponseEntity<?> uploadMediaTestimonial(@RequestParam("file") MultipartFile file,
+                                                    @RequestParam("mediaType") String mediaType,
+                                                    @RequestHeader("Authorization") String tokenHeader) {
         try {
-            logger.info("📥 Base64 brut reçu (taille: {} caractères)", base64Data.length());
+            String token = tokenHeaderToToken(tokenHeader);
+            if (!jwtUtils.validateJwtToken(token))
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
-            // 🔹 Nettoyage avancé
-            base64Data = cleanBase64Data(base64Data);
+            String filename = saveMedia(file);
+            logger.info("✅ Média sauvegardé avec succès : {}", filename);
 
-            // 🔹 Décodage Base64 sécurisé
-            byte[] decodedBytes;
+            String transcription;
             try {
-                decodedBytes = Base64.getDecoder().decode(base64Data);
-            } catch (IllegalArgumentException e) {
-                logger.error("❌ Erreur de décodage Base64: {}", e.getMessage());
-                throw new RuntimeException("Format d'image invalide !");
+                transcription = transcriptionService.transcribeMedia(Paths.get(UPLOAD_DIR).resolve(filename));
+            } catch (Exception ex) {
+                logger.warn("⚠️ Transcription échouée pour {} : {}", filename, ex.getMessage());
+                transcription = "Transcription non disponible pour ce fichier.";
             }
 
-            // 🔹 Vérification et sauvegarde
-            return saveFile(decodedBytes, prefix);
-        } catch (RuntimeException e) {
-            logger.error("❌ Erreur : {}", e.getMessage());
-            throw new RuntimeException("Erreur lors du stockage de l'image !");
+            TestimonialDTO dto = new TestimonialDTO();
+            dto.setMediaPath("/api/testimonials/media/" + filename);
+            dto.setMediaType(mediaType);
+            dto.setTranscriptionText(transcription);
+            dto.setContent("Témoignage média");
+            dto.setDescription("Témoignage avec transcription automatique IA");
+
+            TestimonialDTO savedDto = testimonialService.addTestimonial(dto, token);
+            return ResponseEntity.ok(savedDto);
+        } catch (Exception e) {
+            logger.error("❌ Erreur lors de l'upload média : {}", file.getOriginalFilename(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur : " + e.getMessage());
         }
     }
 
-
-    /** ✅ Nettoyage avancé de la Base64 */
-    private String cleanBase64Data(String base64Data) {
-        if (base64Data.contains(",")) {
-            base64Data = base64Data.substring(base64Data.indexOf(",") + 1);
-        }
-
-        base64Data = base64Data.replaceAll("[^A-Za-z0-9+/=]", "");
-        base64Data = base64Data.replace("-", "+").replace("_", "/");
-
-        while (base64Data.length() % 4 != 0) {
-            base64Data += "=";
-        }
-
-        logger.info("✅ Base64 nettoyé (100 premiers caractères) : {}", base64Data.substring(0, Math.min(base64Data.length(), 100)));
-        return base64Data;
-    }
-
-    /** ✅ Sauvegarde de l'image */
-    private String saveFile(byte[] data, String prefix) {
+    @PostMapping("/{id}/like")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> toggleLike(@PathVariable Long id, @RequestHeader("Authorization") String tokenHeader) {
         try {
-            Path uploadPath = Paths.get(UPLOAD_DIR);
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
-            }
-
-            String filename = String.format("%s_%d.png", prefix, System.currentTimeMillis());
-            Path filePath = uploadPath.resolve(filename);
-            Files.write(filePath, data);
-
-            return filename;
-        } catch (IOException e) {
-            logger.error("❌ Erreur lors de l'enregistrement de l'image: {}", e.getMessage());
-            throw new RuntimeException("Erreur lors de l'enregistrement de l'image !");
+            String token = tokenHeaderToToken(tokenHeader);
+            testimonialService.likeTestimonial(id, token);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur lors du like: " + e.getMessage());
         }
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> deleteTestimonial(@PathVariable Long id, @RequestHeader("Authorization") String tokenHeader) {
+        try {
+            String token = tokenHeaderToToken(tokenHeader);
+            testimonialService.deleteTestimonial(id, token);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur suppression: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<List<TestimonialDTO>> getAllTestimonials(@RequestHeader(value = "Authorization", required = false) String tokenHeader) {
+        String token = null;
+        if (tokenHeader != null && tokenHeader.startsWith("Bearer ")) {
+            token = tokenHeader.substring(7);
+        }
+        return ResponseEntity.ok(testimonialService.getAllTestimonials(token));
+    }
+
+    @GetMapping("/media/{filename:.+}")
+    public ResponseEntity<Resource> getMedia(@PathVariable String filename) {
+        return returnFile(filename);
+    }
+
+    @GetMapping("/images/{filename:.+}")
+    public ResponseEntity<Resource> getImage(@PathVariable String filename) {
+        return returnFile(filename);
+    }
+
+    private ResponseEntity<Resource> returnFile(String filename) {
+        try {
+            Path file = Paths.get(UPLOAD_DIR).resolve(filename).normalize();
+            Resource resource = new UrlResource(file.toUri());
+
+            if (resource.exists() && resource.isReadable()) {
+                String contentType = Files.probeContentType(file);
+                if (contentType == null) contentType = "application/octet-stream";
+
+                return ResponseEntity.ok()
+                        .contentType(MediaType.parseMediaType(contentType))
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
+                        .body(resource);
+            } else {
+                throw new RuntimeException("❌ Fichier non trouvé ou illisible : " + filename);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("❌ Erreur dans returnFile() : " + e.getMessage());
+        }
+    }
+
+    private String tokenHeaderToToken(String authHeader) {
+        if (authHeader != null && authHeader.startsWith("Bearer "))
+            return authHeader.substring(7).trim();
+        throw new RuntimeException("⛔ Token JWT manquant ou invalide !");
+    }
+
+    private String processImage(String base64Data, String prefix) throws IOException {
+        if (base64Data.contains(","))
+            base64Data = base64Data.substring(base64Data.indexOf(",") + 1);
+        base64Data = base64Data.replaceAll("\\s+", "");
+        byte[] decodedBytes = Base64.getDecoder().decode(base64Data);
+        return saveFile(decodedBytes, prefix);
+    }
+
+    private String saveFile(byte[] data, String prefix) throws IOException {
+        Path uploadPath = Paths.get(UPLOAD_DIR);
+        if (!Files.exists(uploadPath)) Files.createDirectories(uploadPath);
+        String filename = prefix + "_" + System.currentTimeMillis() + ".png";
+        Files.write(uploadPath.resolve(filename), data);
+        return filename;
+    }
+
+    private String saveMedia(MultipartFile file) throws IOException {
+        Path uploadPath = Paths.get(UPLOAD_DIR);
+        if (!Files.exists(uploadPath)) Files.createDirectories(uploadPath);
+        String filename = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+        Path filePath = uploadPath.resolve(filename);
+        Files.copy(file.getInputStream(), filePath);
+        return filename;
     }
 }

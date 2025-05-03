@@ -16,18 +16,18 @@ public class Notification {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    Long id;
 
-    private String message;
+    String message;
 
     @Temporal(TemporalType.TIMESTAMP)
-    private Date createdAt = new Date();
+    Date createdAt = new Date();
 
     @ManyToOne
-    @JoinColumn(name = "association_id", nullable = false)
-    private Association association;  // ✅ Assurer la correspondance avec Association
+    @JoinColumn(name = "association_id", nullable = true)
+    Association association;
 
     @ManyToOne
     @JoinColumn(name = "subscriber_id", nullable = false)
-    private Subscriber subscriber;
+    Subscriber subscriber;
 }

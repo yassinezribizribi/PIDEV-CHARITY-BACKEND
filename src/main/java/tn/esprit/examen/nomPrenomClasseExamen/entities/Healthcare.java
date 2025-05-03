@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-
 import java.io.Serializable;
 import java.util.Date;
 
@@ -18,31 +17,27 @@ import java.util.Date;
 public class Healthcare implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long idHealthcare;
+    Long idHealthcare;
 
-    private String history;
-    private String treatmentPlan;
-    private String terminalDisease;
+    String history;
+    String treatmentPlan;
+    String terminalDisease;
+
+    @Column(name = "meeting_url")
+    String meetingUrl;
 
     @Temporal(TemporalType.TIMESTAMP)
-    private Date bookingDate;
+    Date bookingDate;
 
-    // ✅ Ajout du statut pour suivre l’évolution du traitement
     @Enumerated(EnumType.STRING)
-    private HealthcareStatus status;
+    HealthcareStatus status;
 
-    @JsonIgnore    // ✅ Patient qui a demandé le soin
+    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "subscriber_id", nullable = false)
-    private Subscriber subscriber;
+    Subscriber subscriber;
 
-    // ✅ Médecin (VOLUNTEER) qui traite la demande
     @ManyToOne
     @JoinColumn(name = "doctor_id", nullable = true)
-    private Subscriber doctor;
-
-    // ✅ Setter pour éviter l’erreur de compilation
-    public void setStatus(HealthcareStatus status) {
-        this.status = status;
-    }
+    Subscriber doctor;
 }
