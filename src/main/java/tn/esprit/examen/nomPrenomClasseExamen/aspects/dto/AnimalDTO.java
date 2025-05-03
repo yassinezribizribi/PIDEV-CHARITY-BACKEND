@@ -34,7 +34,7 @@ public class AnimalDTO {
         this.isAdopted = animal.getIsAdopted();
         // Get subscriberId from subscriber entity (idUser)
         this.subscriberId = (animal.getSubscriber() != null) ? animal.getSubscriber().getIdUser() : null;
-        this.image = (animal.getImage());
+        this.image = (animal.getImagePath());
     }
 
     // Getters and Setters (if necessary)
