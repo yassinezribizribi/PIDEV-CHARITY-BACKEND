@@ -43,7 +43,7 @@ public class WebSecurityConfig {
                 .csrf(csrf -> csrf.disable()) // Désactive CSRF
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Pas de session
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll() // Auth autorisé
+                        .requestMatchers("/api/auth/**","/api/animals/images/**").permitAll() // Auth autorisé
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                          // ⚠️ Attention, tout ouvert
                         .anyRequest().authenticated() // Le reste nécessite une auth

@@ -4,14 +4,22 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import tn.esprit.examen.nomPrenomClasseExamen.Repositories.AnimalRepository;
 import tn.esprit.examen.nomPrenomClasseExamen.Repositories.SubscriberRepository;
 import tn.esprit.examen.nomPrenomClasseExamen.dto.AnimalDTO;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Animal;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Subscriber;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @Component
@@ -25,21 +33,14 @@ public class AnimalServices implements IAnimalServices {
     private SubscriberRepository subscriberRepository;
 
     @Override
-    public Animal addAnimal(AnimalDTO animalDTO,Long iduser) {
+    public Animal addAnimal(AnimalDTO animalDTO, Long iduser, MultipartFile imageFile) {
         if (animalDTO == null) {
             throw new IllegalArgumentException("Les données de l'animal sont nulles.");
         }
 
-//        // Validate subscriber information
-//        if (animalDTO.getSubscriber() == null || animalDTO.getSubscriber().getIdUser() == null) {
-//            throw new IllegalArgumentException("L'ID du subscriber est requis.");
-//        }
-//
-//        // Fetch the subscriber from the database
         Subscriber subscriber = subscriberRepository.findById(iduser)
-                .orElseThrow(() -> new IllegalArgumentException("Subscriber (User) non trouvé avec l'ID : " + animalDTO.getSubscriber().getIdUser()));
-        System.out.println(subscriber.getIdUser());
-        // Create the animal object
+                .orElseThrow(() -> new IllegalArgumentException("Subscriber (User) non trouvé avec l'ID : " + iduser));
+
         Animal animal = new Animal();
         animal.setName(animalDTO.getName());
         animal.setAnimalSpecies(animalDTO.getAnimalSpecies());
@@ -49,7 +50,22 @@ public class AnimalServices implements IAnimalServices {
         animal.setHealthcare(animalDTO.getHealthcare());
         animal.setSubscriber(subscriber);
 
-        // Save the animal and return the saved entity
+        if (imageFile != null && !imageFile.isEmpty()) {
+            try {
+                String uploadDir = "upload/";
+                File dir = new File(uploadDir);
+                if (!dir.exists()) dir.mkdirs();
+
+                String fileName = UUID.randomUUID().toString() + "_" + imageFile.getOriginalFilename();
+                Path filePath = Paths.get(uploadDir, fileName);
+                Files.copy(imageFile.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+                animal.setImagePath(fileName);
+            } catch (IOException e) {
+                throw new RuntimeException("Erreur lors du téléchargement de l'image : " + e.getMessage());
+            }
+        }
+
         return animalRepository.save(animal);
     }
 

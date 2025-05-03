@@ -50,7 +50,8 @@ public class Training implements Serializable {
     @Future(message = "The session date must be a future date.")
     private LocalDate sessionDate;
 
-    @ManyToMany(cascade = CascadeType.ALL)
+    @ManyToMany(cascade = CascadeType.ALL,fetch = FetchType.LAZY)
 
     private Set<Subscriber> subscribers;
+
 }

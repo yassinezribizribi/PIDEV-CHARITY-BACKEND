@@ -2,13 +2,22 @@ package tn.esprit.examen.nomPrenomClasseExamen.Controllers;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import tn.esprit.examen.nomPrenomClasseExamen.dto.AnimalDTO;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Animal;
 import tn.esprit.examen.nomPrenomClasseExamen.services.IAnimalServices;
 
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,16 +31,37 @@ public class AnimalController {
     private IAnimalServices animalService;
 
     // Créer un animal
-    @PostMapping("/add/{iduser}")
-    public ResponseEntity<Animal> createAnimal(@RequestBody AnimalDTO animalDTO,@PathVariable Long iduser) {
+    @PostMapping("/add")
+    public ResponseEntity<Animal> createAnimal(
+            @RequestPart("animal") AnimalDTO animalDTO,
+            @RequestPart("image") MultipartFile imageFile,
+            @RequestParam("iduser") Long iduser) {
+
+        Animal savedAnimal = animalService.addAnimal(animalDTO, iduser, imageFile);
+        return ResponseEntity.ok(savedAnimal);
+    }
+
+    @GetMapping("/images/{filename:.+}")
+    public ResponseEntity<Resource> getImage(@PathVariable String filename) {
         try {
-            Animal animal = animalService.addAnimal(animalDTO,iduser);
-            System.out.println(iduser);
-            return ResponseEntity.status(HttpStatus.CREATED).body(animal);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(null);
+            Path imagePath = Paths.get("upload").resolve(filename).normalize();
+            Resource resource = new UrlResource(imagePath.toUri());
+
+            if (resource.exists()) {
+                String contentType = Files.probeContentType(imagePath);
+                return ResponseEntity.ok()
+                        .contentType(MediaType.parseMediaType(contentType))
+                        .body(resource);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (MalformedURLException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
 
     // Mettre à jour un animal
     @PutMapping("/updateAnimal/{id}")

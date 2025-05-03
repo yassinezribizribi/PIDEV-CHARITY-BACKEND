@@ -6,17 +6,17 @@ import jakarta.persistence.*;
 @Table(name = "event_subscriber")
 public class EventSubscriber {
 
-    @EmbeddedId
-    private EventSubscriberId id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)  // Auto-incrémenté
+    @Column(name = "id")
+    private Long id;
 
     @ManyToOne
-    @MapsId("eventId")
-    @JoinColumn(name = "event_id")
+    @JoinColumn(name = "event_id", nullable = false)
     private Event event;
 
     @ManyToOne
-    @MapsId("subscriberId")
-    @JoinColumn(name = "subscriber_id")
+    @JoinColumn(name = "subscriber_id", nullable = false)
     private Subscriber subscriber;
 
     @Column(nullable = false)
@@ -26,22 +26,41 @@ public class EventSubscriber {
     public EventSubscriber() {}
 
     public EventSubscriber(Event event, Subscriber subscriber, Boolean isAffected) {
-        this.id = new EventSubscriberId(event.getIdEvent(), subscriber.getIdUser());
         this.event = event;
         this.subscriber = subscriber;
         this.isAffected = isAffected;
     }
 
     // Getters & Setters
-    public EventSubscriberId getId() { return id; }
-    public void setId(EventSubscriberId id) { this.id = id; }
+    public Long getId() {
+        return id;
+    }
 
-    public Event getEvent() { return event; }
-    public void setEvent(Event event) { this.event = event; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public Subscriber getSubscriber() { return subscriber; }
-    public void setSubscriber(Subscriber subscriber) { this.subscriber = subscriber; }
+    public Event getEvent() {
+        return event;
+    }
 
-    public Boolean getIsAffected() { return isAffected; }
-    public void setIsAffected(Boolean isAffected) { this.isAffected = isAffected; }
+    public void setEvent(Event event) {
+        this.event = event;
+    }
+
+    public Subscriber getSubscriber() {
+        return subscriber;
+    }
+
+    public void setSubscriber(Subscriber subscriber) {
+        this.subscriber = subscriber;
+    }
+
+    public Boolean getIsAffected() {
+        return isAffected;
+    }
+
+    public void setIsAffected(Boolean isAffected) {
+        this.isAffected = isAffected;
+    }
 }

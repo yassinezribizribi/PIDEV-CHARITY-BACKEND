@@ -5,6 +5,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Getter
@@ -22,7 +23,8 @@ public class Notification implements Serializable {
 
     private String message;
     private Date dateTime;
-
+    private String type;
+    private LocalDateTime updatedAt;
     @ManyToOne
     private Association association;
 

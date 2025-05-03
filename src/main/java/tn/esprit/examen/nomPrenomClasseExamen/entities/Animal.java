@@ -21,6 +21,8 @@ public class Animal implements Serializable {
     private String name;
     private String animalSpecies;
     private String race ;
+    @Column(name = "image_path")
+    private String imagePath;
     private String medicalHistory;
     private Boolean isAdopted;
     @OneToOne
@@ -30,4 +32,12 @@ public class Animal implements Serializable {
     @JoinColumn(name = "id_user")
     private Subscriber subscriber;
 
+    public String getImagePath() {
+        return imagePath;
+    }
+
+    public Animal setImagePath(String imagePath) {
+        this.imagePath = imagePath;
+        return this;
+    }
 }

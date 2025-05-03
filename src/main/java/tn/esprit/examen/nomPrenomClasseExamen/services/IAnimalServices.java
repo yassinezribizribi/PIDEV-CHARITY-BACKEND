@@ -1,5 +1,6 @@
 package tn.esprit.examen.nomPrenomClasseExamen.services;
 
+import org.springframework.web.multipart.MultipartFile;
 import tn.esprit.examen.nomPrenomClasseExamen.dto.AnimalDTO;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Animal;
 
@@ -7,7 +8,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface IAnimalServices {
-    public Animal addAnimal(AnimalDTO animalDTO,Long iduser);
+    public Animal addAnimal(AnimalDTO animalDTO, Long iduser, MultipartFile imageFile);
 
     Animal updateAnimal(Long id, Animal updatedAnimal);
 
