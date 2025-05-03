@@ -48,6 +48,7 @@ public class ReminderService {
     }
 
 
+    //calculating animal dispo
     @Scheduled(cron = "*/10 * * * * ?")
     public void updateUnadoptedAnimalsCount() {
         // Compter les animaux non adoptés
