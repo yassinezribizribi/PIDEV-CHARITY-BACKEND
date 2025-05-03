@@ -16,12 +16,12 @@ Run mvn clean install to build the project. The build artifacts will be stored i
 
 ## Running unit tests
 
-Run mvn verify to execute integration tests or end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities, such as Spring Boot Test.
+Run mvn test to execute the unit tests via JUnit.
 
 ## Running end-to-end tests
 
-To get more help on Maven, use mvn --help or check out the Maven Official Documentation. For Spring Boot, refer to the Spring Boot Reference Documentation.
+Run mvn verify to execute integration tests or end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities, such as Spring Boot Test.
 
 ## Further help
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+To get more help on Maven, use mvn --help or check out the Maven Official Documentation. For Spring Boot, refer to the Spring Boot Reference Documentation.
