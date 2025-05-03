@@ -17,11 +17,11 @@ public interface IEventServices {
     List<Event> getEventsByAssociation(Long associationId);
     Event addNotificationToEvent(Long eventId, Notification notification);
 
-    Event markSubscriberAsInterested(Long eventId, Long userId);
+    EventSubscriber markSubscriberAsInterested(Long eventId, Long userId);
 
     Set<Subscriber> getEventSubscribers(Long eventId);
 
-
+    public List<Event> getEventInteressetedByUser(Long userId);
 
     User getProfil(Principal connectedUser);
 

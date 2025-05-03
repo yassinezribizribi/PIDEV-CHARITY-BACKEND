@@ -19,12 +19,14 @@ public class PostsDTO {
     private Long idPosts;
     private String content;
     private Date creationDate;
+    private String imagePath;
     private boolean likedByUser;
 
     public PostsDTO(Posts post, Long userId) {
         this.idPosts = post.getIdPosts();
         this.content = post.getContent();
         this.creationDate = post.getCreationDate();
+        this.imagePath=post.getImagePath();
         this.likedByUser = post.getLikedByUsers().stream().anyMatch(user -> user.getIdUser().equals(userId));
     }
     //private Set<PostAction> postActions;

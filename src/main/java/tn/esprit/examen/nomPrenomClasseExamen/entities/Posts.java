@@ -9,6 +9,7 @@ import lombok.experimental.FieldDefaults;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Getter
@@ -28,13 +29,16 @@ public class Posts implements Serializable{
     private String content;
     private Date creationDate;
 
-
+    @Column(name = "image_path")
+    private String imagePath;
     @OneToMany(cascade = CascadeType.ALL, mappedBy="posts")
     @JsonIgnore
     private Set<PostAction> postActions;
 
     private Long likesCount = Long.valueOf(0);
-
+    @OneToMany(cascade = CascadeType.ALL, mappedBy="post", fetch = FetchType.LAZY)
+    @JsonIgnoreProperties("post") // pour éviter la récursion infinie
+    private List<Comment> Comments;
     @ManyToMany
     @JsonIgnore
     @JoinTable(

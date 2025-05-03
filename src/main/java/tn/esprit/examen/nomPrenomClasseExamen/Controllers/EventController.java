@@ -152,8 +152,8 @@ public class EventController {
     }
 
     @PostMapping("/{eventId}")
-    public ResponseEntity<Event> subscribeToEvent(@PathVariable Long eventId, @RequestParam Long userId) {
-        Event updatedEvent = eventServices.markSubscriberAsInterested(eventId, userId);
+    public ResponseEntity<EventSubscriber> subscribeToEvent(@PathVariable Long eventId, @RequestParam Long userId) {
+        EventSubscriber updatedEvent = eventServices.markSubscriberAsInterested(eventId, userId);
         return ResponseEntity.ok(updatedEvent);
     }
 
@@ -162,6 +162,10 @@ public class EventController {
         Set<Subscriber> subscribers = eventServices.getEventSubscribers(eventId);
         return ResponseEntity.ok(subscribers);
     }
-
+    @GetMapping("/{userId}/getevents")
+    public ResponseEntity<List<Event>> getEventInteressetedByUser(@PathVariable Long userId) {
+        List<Event> subscribers = eventServices.getEventInteressetedByUser(userId);
+        return ResponseEntity.ok(subscribers);
+    }
 
 }

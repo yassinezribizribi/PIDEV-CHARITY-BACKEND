@@ -43,9 +43,6 @@ public class Event implements Serializable {
     @Enumerated(EnumType.STRING)
     private TypeEvent typeEvent;
 
-    @NotNull(message = "The reservation date cannot be null.")
-    @PastOrPresent(message = "The reservation date must be in the past or present.")
-    private Date reservationDate;
 
     @ManyToOne
     @JoinColumn(name = "association_id_association")

@@ -21,7 +21,8 @@ public class EventServices implements IEventServices {
 
     @Autowired
     private EventRepository eventRepository;
-
+    @Autowired
+    private EventSubscriberRepository eventSubscriberRepository;
     @Autowired
     private SubscriberRepository subscriberRepository;
 
@@ -74,7 +75,6 @@ public class EventServices implements IEventServices {
         if(eventDTO.getTypeEvent() == TypeEvent.COMMUNITY_AWARENESS){
             event.setTypeEvent(TypeEvent.COMMUNITY_AWARENESS);
         }
-        event.setReservationDate(eventDTO.getReservationDate());
         event.setAssociation(association);
 
         return eventRepository.save(event);
@@ -110,7 +110,6 @@ public class EventServices implements IEventServices {
                     existingEvent.setDateTime(updatedEvent.getDateTime());
                     existingEvent.setLocation(updatedEvent.getLocation());
                     existingEvent.setTypeEvent(updatedEvent.getTypeEvent());
-                    existingEvent.setReservationDate(updatedEvent.getReservationDate());
 
                     log.info("Mise à jour de l'événement avec ID {}", id);
                     return eventRepository.save(existingEvent);
@@ -155,18 +154,20 @@ public class EventServices implements IEventServices {
 
         return eventRepository.save(event);
     }
-    public Event markSubscriberAsInterested(Long eventId, Long userId) {
+    public EventSubscriber markSubscriberAsInterested(Long eventId, Long userId) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new IllegalArgumentException("Event not found with ID: " + eventId));
 
         Subscriber subscriber = subscriberRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Subscriber not found with ID: " + userId));
 
-        event.getEvent_subscribers().add(subscriber);
-        subscriber.getEvents().add(event);
+        EventSubscriber eventSubscriber = new EventSubscriber();
+        eventSubscriber.setEvent(event);
+        eventSubscriber.setSubscriber(subscriber);
 
-        subscriberRepository.save(subscriber);
-        return eventRepository.save(event);
+
+
+        return  eventSubscriberRepository.save(eventSubscriber);
     }
 
     public Set<Subscriber> getEventSubscribers(Long eventId) {
@@ -174,6 +175,13 @@ public class EventServices implements IEventServices {
                 .orElseThrow(() -> new IllegalArgumentException("Event not found with ID: " + eventId));
         return event.getEvent_subscribers();
     }
+    public List<Event> getEventInteressetedByUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
+
+        return eventSubscriberRepository.findEventsBySubscriber(user);
+    }
+
 
 
 

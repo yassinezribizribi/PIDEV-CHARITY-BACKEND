@@ -1,0 +1,43 @@
+package tn.esprit.examen.nomPrenomClasseExamen.services;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+import tn.esprit.examen.nomPrenomClasseExamen.Repositories.EventRepository;
+import tn.esprit.examen.nomPrenomClasseExamen.Repositories.EventSubscriberRepository;
+import tn.esprit.examen.nomPrenomClasseExamen.entities.Event;
+import tn.esprit.examen.nomPrenomClasseExamen.entities.EventSubscriber;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Service
+public class ReminderService {
+
+    @Autowired
+    private EventRepository eventRepository;
+
+    @Autowired
+    private EventSubscriberRepository eventSubscriberRepository;
+    @Autowired
+    EmailService emailService;
+
+
+    @Scheduled(cron = "0 * * * * ?")
+    public void sendEventReminders() {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime twoDaysFromNow = now.plusDays(2);
+
+        List<Event> eventsInTwoDays = eventRepository.findEventByDateTimeBetween(twoDaysFromNow.minusDays(1), twoDaysFromNow.plusDays(1));
+
+        for (Event event : eventsInTwoDays) {
+            List<EventSubscriber> subscribers = eventSubscriberRepository.findByEvent(event);
+            for (EventSubscriber subscriber : subscribers) {
+                emailService.sendReminderEmail(subscriber.getSubscriber(), event);
+            }
+        }
+    }
+
+
+}

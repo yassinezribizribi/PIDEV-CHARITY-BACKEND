@@ -35,9 +35,7 @@ public class EventDTO {
     @NotNull(message = "The event type is required.")
     private TypeEvent typeEvent;
 
-    @NotNull(message = "The reservation date is required.")
-    //@FutureOrPresent(message = "The reservation date must be today or in the future.")
-    private Date reservationDate;
+
 
     @NotNull(message = "The association ID is required.")
     @Min(value = 1, message = "The association ID must be a positive number.")

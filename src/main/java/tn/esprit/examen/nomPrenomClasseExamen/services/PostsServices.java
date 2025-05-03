@@ -2,6 +2,7 @@ package tn.esprit.examen.nomPrenomClasseExamen.services;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import tn.esprit.examen.nomPrenomClasseExamen.Repositories.UserRepository;
 import tn.esprit.examen.nomPrenomClasseExamen.dto.PostsDTO;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Posts;
@@ -10,9 +11,16 @@ import tn.esprit.examen.nomPrenomClasseExamen.Repositories.PostsRepository;
 import tn.esprit.examen.nomPrenomClasseExamen.Repositories.SubscriptionRepository;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.User;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 @Service
 public class PostsServices implements IPostsServives{
@@ -27,28 +35,32 @@ public class PostsServices implements IPostsServives{
     private UserRepository userRepository;
 
    @Override
-    public Posts createPostsAndAssignToAssociation(PostsDTO postsDTO) {
+    public Posts createPostsAndAssignToAssociation(PostsDTO postsDTO, MultipartFile imageFile) {
         Posts posts = new Posts();
 
         posts.setContent(postsDTO.getContent());
         posts.setCreationDate(postsDTO.getCreationDate());
         System.out.println("setContent"+ postsDTO.getContent());
         //posts.setPostActions(postsDTO.getPostActions());
+       if (imageFile != null && !imageFile.isEmpty()) {
+           try {
+               String uploadDir = "upload/";
+               File dir = new File(uploadDir);
+               if (!dir.exists()) dir.mkdirs();
 
-        // Vérification et assignation au bon abonnement (Subscription)
-//        if (postsDTO.getSubscription() != null) {
-//            Optional<Subscription> existingSubscription = subscriptionRepository.findById(postsDTO.getSubscription().getIdSubscription());
-//            if (existingSubscription.isPresent()) {
-//                posts.setSubscription(existingSubscription.get());
-//            } else {
-//                throw new IllegalArgumentException("Subscription ID " + postsDTO.getSubscription().getIdSubscription() + " introuvable.");
-//            }
-//        }
-//        } else {
-//            throw new IllegalArgumentException("Une subscription est requise pour créer un post.");
-//        }
+               String fileName = UUID.randomUUID().toString() + "_" + imageFile.getOriginalFilename();
+               Path filePath = Paths.get(uploadDir, fileName);
+               Files.copy(imageFile.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-        return postsRepository.save(posts);
+               posts.setImagePath(fileName);
+           } catch (IOException e) {
+               throw new RuntimeException("Erreur lors du téléchargement de l'image : " + e.getMessage());
+           }
+       }
+
+
+
+       return postsRepository.save(posts);
     }
 
     @Override
@@ -122,6 +134,15 @@ public class PostsServices implements IPostsServives{
             throw new IllegalArgumentException("Subscription ID " + subscriptionId + " introuvable.");
         }
         return postsRepository.findBySubscription(subscription.get());
+    }
+    @Override
+    public Set<User> getUserlikepost(Long postId) {
+        Optional<Posts> post = postsRepository.findById(postId);
+        if (post.isEmpty()) {
+            throw new IllegalArgumentException("post ID " + postId + " introuvable.");
+        }
+
+        return post.get().getLikedByUsers();
     }
 
     @Override

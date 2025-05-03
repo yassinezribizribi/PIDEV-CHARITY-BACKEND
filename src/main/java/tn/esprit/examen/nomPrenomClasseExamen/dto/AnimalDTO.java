@@ -15,6 +15,8 @@ public class AnimalDTO {
 
     private Long IdAnimal;
     private String name;
+    private String imagePath;
+
     private String animalSpecies;
     private String race;
     private String medicalHistory;
@@ -30,6 +32,8 @@ public class AnimalDTO {
         this.race = animal.getRace();
         this.medicalHistory = animal.getMedicalHistory();
         this.isAdopted = animal.getIsAdopted();
+        this.imagePath=animal.getImagePath();
+
         // Get subscriberId from subscriber entity (idUser)
         this.subscriberId = (animal.getSubscriber() != null) ? animal.getSubscriber().getIdUser() : null;
     }
