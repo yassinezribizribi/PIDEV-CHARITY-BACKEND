@@ -1,6 +1,7 @@
 package tn.esprit.examen.nomPrenomClasseExamen.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.*;
 import lombok.*;
 import java.io.Serializable;
@@ -18,6 +19,9 @@ public class Association implements Serializable {
     private Long idAssociation;
 
     private String associationAddress;
+
+    private Double latitude;
+    private Double longitude;
     private String associationName;
     private String description;
 
@@ -37,6 +41,7 @@ public class Association implements Serializable {
     @ManyToMany(mappedBy = "associations")
     @JsonIgnore
     private Set<Mission> missions = new HashSet<>();
+
 
 
 

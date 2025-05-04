@@ -36,8 +36,7 @@ public class AssociationController {
 
     private final AssociationServices associationServices;
     private final JwtUtils jwtUtils;
-    private static final String FILE_DIRECTORY = "C:\\Users\\user\\Desktop\\uploads";
-
+    private static final String FILE_DIRECTORY = "C:\\Users\\hp\\Desktop\\uploads";
     private static final Logger logger = LoggerFactory.getLogger(AssociationController.class);
 
     // ============== FILE HANDLING ==============

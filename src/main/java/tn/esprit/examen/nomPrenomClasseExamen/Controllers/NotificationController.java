@@ -19,7 +19,8 @@ import java.util.List;
 public class NotificationController {
     private final INotificationService notificationService;
     private final JwtUtils jwtUtils;
-private final ConversationService conversationService;
+    private final ConversationService conversationService;
+
     @GetMapping
     @PreAuthorize("hasAnyRole('ROLE_REFUGEE', 'ROLE_ASSOCIATION')")
     public ResponseEntity<List<NotificationDTO>> getNotifications(@RequestHeader("Authorization") String authHeader) {
@@ -27,6 +28,7 @@ private final ConversationService conversationService;
         Long userId = jwtUtils.getUserIdFromJwtToken(token);
         return ResponseEntity.ok(notificationService.getNotificationsForSubscriber(userId));
     }
+
     @GetMapping("/unread/{userId}")
     public List<Message> getUnreadMessages(@PathVariable Long userId) {
         return conversationService.getUnreadMessages(userId);
@@ -36,6 +38,7 @@ private final ConversationService conversationService;
     public void markMessageAsRead(@PathVariable Long messageId) {
         conversationService.markSingleMessageAsRead(messageId);
     }
+
     @PostMapping("/{id}/read")
     @PreAuthorize("hasAnyRole('ROLE_REFUGEE', 'ROLE_ASSOCIATION')")
     public ResponseEntity<Void> markAsRead(@PathVariable Long id) {

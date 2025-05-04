@@ -154,9 +154,4 @@ public class JobOfferController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Failed to update user status"));
         }
-    }
-
-
-
-
-}
+    }}

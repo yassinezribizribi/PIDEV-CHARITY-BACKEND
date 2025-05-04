@@ -81,17 +81,11 @@ public class WebSecurityConfig {
                                 "/api/dons/update-dons/nonauth/**"
 
                         ).permitAll()
-
-
-
-                        // Other existing rules
                         .requestMatchers(HttpMethod.PUT, "/api/associations/*/verify").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/associations").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/associations/list").permitAll()
+                        .anyRequest().authenticated())
 
-
-                        .anyRequest().authenticated()
-                )
                 .addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint((request, response, authException) -> {

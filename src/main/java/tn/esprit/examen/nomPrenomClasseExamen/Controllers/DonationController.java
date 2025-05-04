@@ -32,6 +32,7 @@ public class DonationController {
 
     private final DonationServices donationService;
     private static final Logger logger = LoggerFactory.getLogger(DonationController.class);
+
     // 🎯 Endpoint to contribute to an existing donation
 //    @PostMapping  ("/{donationId}/contribute")
 //    public ResponseEntity<DonationDto> contributeToDonation(
@@ -52,6 +53,7 @@ public class DonationController {
         List<DonationDto> donations = donationService.findByDonationType(donationType);
         return ResponseEntity.ok(donations);
     }
+
     @GetMapping("/getall")
     public ResponseEntity<List<DonationDto>> getAllDonations() {
         try {

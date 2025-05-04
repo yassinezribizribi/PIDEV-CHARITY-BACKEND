@@ -22,8 +22,8 @@ public class User implements Serializable{
     private Long idUser;
     private String firstName;
     private String lastName;
-    @NotNull
-    protected String email;
+    @Column(unique = true, nullable = false)
+    private String email;
     private String password;
     private String telephone;
     private Boolean isBanned;
@@ -33,5 +33,10 @@ public class User implements Serializable{
     @OneToMany(mappedBy = "utilisateur")
     @JsonIgnore
     private List<Paiement> paiements;
+    private String location;
+
+
+
+
 
 }

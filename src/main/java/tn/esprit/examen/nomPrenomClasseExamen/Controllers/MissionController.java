@@ -50,7 +50,7 @@ public class MissionController {
     private final MissionServices missionServices;
     private final JwtUtils jwtUtils;
     private final SubscriberRepository subscriberRepository;
-private  final MailerSendService mailerSendService;
+    private  final MailerSendService mailerSendService;
     private static final String FILE_DIRECTORY = "C:\\Users\\user\\Desktop\\uploads";
 
     private static final Logger logger = LoggerFactory.getLogger(MissionController.class);

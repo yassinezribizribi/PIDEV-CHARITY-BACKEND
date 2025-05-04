@@ -22,7 +22,6 @@ public class SubscriberServices implements ISubscriberServices {
 
     public Subscriber registerSubscriber(SignupRequestDto request) {
         validateRoleFields(request);
-
         Subscriber subscriber = new Subscriber();
         subscriber.setRole(request.getRole());
         subscriber.setFirstName(request.getFirstName());
@@ -39,9 +38,6 @@ public class SubscriberServices implements ISubscriberServices {
             case REFUGEE -> subscriber.setNationality(request.getNationality());
             case MENTOR -> subscriber.setExpertiseArea(request.getExpertiseArea());
             case ASSOCIATION_MEMBER -> subscriber.setAssociationRole(request.getAssociationRole());
-
-
-
         }
 
         return subscriberRepository.save(subscriber);
@@ -74,10 +70,6 @@ public class SubscriberServices implements ISubscriberServices {
                 if (request.getAssociationRole() == null)
                     throw new IllegalArgumentException("Role of the association is required ");
             }
-            case ADMIN -> {
-                // No additional fields required
-            }
-
         }
     }
 }

@@ -60,7 +60,7 @@ public class Mission implements Serializable{
     @ElementCollection
     @CollectionTable(name = "mission_tags", joinColumns = @JoinColumn(name = "mission_id"))
     @Column(name = "tag")
-     List<String> tags;  // You can use Set<String> if you prefer unique tags
+    List<String> tags;  // You can use Set<String> if you prefer unique tags
 
     // ➡️ NEW RELATION: PARTICIPATIONS
     @OneToMany(mappedBy = "mission", cascade = CascadeType.ALL)

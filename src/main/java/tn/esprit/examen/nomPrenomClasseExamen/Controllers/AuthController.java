@@ -1,4 +1,5 @@
 package tn.esprit.examen.nomPrenomClasseExamen.Controllers;
+import jakarta.validation.Valid;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,7 @@ import tn.esprit.examen.nomPrenomClasseExamen.jwt.JwtUtils;
 import tn.esprit.examen.nomPrenomClasseExamen.services.SubDetailsImpl;
 import tn.esprit.examen.nomPrenomClasseExamen.services.EmailService;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.validation.annotation.Validated;
 
 
 import java.util.List;
@@ -52,6 +54,7 @@ public class AuthController {
     public ResponseEntity<?> adminLogin(@RequestBody LoginRequest loginRequest) {
         return authenticateUser(loginRequest);
     }
+
     @PostMapping("/signin")
     public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
         System.out.println("🔍 Tentative de connexion...");
@@ -95,7 +98,7 @@ public class AuthController {
 
     // 🔹 REGISTER (SIGNUP)
     @PostMapping("/signup")
-    public ResponseEntity<?> registerUser(@RequestBody SignupRequestDto signUpRequest) {
+    public ResponseEntity<?> registerUser(@RequestBody @Valid SignupRequestDto signUpRequest) {
         log.info("📩 Tentative d'inscription avec l'email : {}", signUpRequest.getEmail());
 
         if (subscriberRepository.existsByEmail(signUpRequest.getEmail())) {
@@ -113,6 +116,7 @@ public class AuthController {
             subscriber.setRole(role);
             subscriber.setJob(signUpRequest.getJob());
             subscriber.setTelephone(signUpRequest.getTelephone());
+            subscriber.setLocation(signUpRequest.getLocation());
 
             subscriberRepository.save(subscriber);
             sendWelcomeEmail(subscriber, signUpRequest.getPassword());
@@ -155,6 +159,7 @@ public class AuthController {
         Subscriber subscriber = subscriberOpt.get();
         return ResponseEntity.ok(subscriber);
     }
+
 
     // 🔹 UPDATE USER
     @PutMapping("/update/{id}")
@@ -200,10 +205,6 @@ public class AuthController {
                 plainPassword
         );
 
-        if (subscriber.getEmail() == null || subscriber.getEmail().isEmpty()) {
-            throw new IllegalArgumentException("Email is null or empty");
-        }
-
         try {
             emailService.sendEmail(subscriber.getEmail(), subject, body);
         } catch (Exception e) {
@@ -224,6 +225,8 @@ public class AuthController {
                     .body(new MessageResponseDto("User not found!"));
         }
 
+        // Remove these misplaced lines
+        // emailService.sendEmail(subscriber.getEmail(), subject, body);
+
         return ResponseEntity.ok(subscriberOpt.get());
-    }
-}
+    }}

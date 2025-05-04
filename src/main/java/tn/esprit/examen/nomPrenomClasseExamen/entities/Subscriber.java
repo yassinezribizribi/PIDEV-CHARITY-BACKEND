@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.util.List;
 import java.util.Set;
 
 @Getter
@@ -68,4 +69,8 @@ public class Subscriber extends User {
     @OneToMany(mappedBy = "createdBy", cascade = CascadeType.ALL)
     @JsonIgnore
     private Set<JobOffer> jobOffers;
+
+    @OneToMany(mappedBy = "subscriber")
+    @JsonIgnore
+    private List<Crisis> crises;
 }

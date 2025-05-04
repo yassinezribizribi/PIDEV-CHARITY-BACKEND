@@ -26,4 +26,9 @@ public interface AssociationRepository extends JpaRepository<Association, Long>,
             "WHERE a.idAssociation <> :currentId " +
             "AND a NOT IN (SELECT p FROM Association a2 JOIN a2.partners p WHERE a2.idAssociation = :currentId)")
     List<Association> findNonPartnerAssociations(@Param("currentId") Long currentId);
+
+
+
+    Optional<Association> findByAssociationAddress(String associationAddress);
+
 }

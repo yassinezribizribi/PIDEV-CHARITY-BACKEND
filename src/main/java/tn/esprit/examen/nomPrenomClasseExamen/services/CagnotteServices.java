@@ -73,4 +73,5 @@ public class CagnotteServices {
         cagnotteEnligneRepository.deleteById(id);
         log.info("✅ Cagnotte supprimée avec succès !");
     }
+
 }

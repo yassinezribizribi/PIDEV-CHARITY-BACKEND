@@ -29,6 +29,7 @@ public class CagnotteEnligneController {
         logger.info("🔍 Fetching cagnotte with ID: {}", id);
         return ResponseEntity.ok(cagnotteService.getCagnotteById(id));
     }
+
     @PostMapping("/cagnottes/add/{donationId}")
     public ResponseEntity<CagnotteEnligne> createCagnotteEtAffecterADonation(@PathVariable Long donationId, @RequestBody CagnotteEnligne cagnotte) {
         try {

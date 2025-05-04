@@ -33,3 +33,5 @@ public interface SubscriberRepository extends JpaRepository<Subscriber, Long> {
     List<Subscriber> findByValidationStatusAndRole(VolunteerStatus status, Role role);
 
 }
+
+
