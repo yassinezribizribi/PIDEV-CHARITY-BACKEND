@@ -155,4 +155,3 @@ public class JobOfferController {
                     .body(Map.of("error", "Failed to update user status"));
         }
     }}
-
