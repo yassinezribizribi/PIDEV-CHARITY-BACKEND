@@ -132,6 +132,7 @@ TrainingController {
         document.setMargins(50, 50, 50, 50);
         pdf.addNewPage();
 
+
         // Double border (navy blue and gold)
         PdfCanvas canvas = new PdfCanvas(pdf.getFirstPage());
         canvas.setLineWidth(2)
@@ -144,26 +145,32 @@ TrainingController {
                 .stroke();
 
         // Top banner (navy blue)
+
         canvas.setFillColor(new DeviceRgb(0, 51, 102))
                 .rectangle(36, pdf.getDefaultPageSize().getHeight() - 86, pdf.getDefaultPageSize().getWidth() - 72, 50)
                 .fill();
 
+
         // Elegant symbol (diploma icon) with top margin to avoid overlap
+
         document.add(new Paragraph("🎓")
                 .setFontSize(40)
                 .setTextAlignment(TextAlignment.CENTER)
                 .setFontColor(new DeviceRgb(191, 144, 0))
+
                 .setMarginTop(20) // Added top margin to lower the symbol
                 .setMarginBottom(10));
 
         // Gold title with serif font
         PdfFont titleFont = PdfFontFactory.createFont(StandardFonts.TIMES_BOLD);
         document.add(new Paragraph("CERTIFICATE OF PARTICIPATION")
+
                 .setFont(titleFont)
                 .setTextAlignment(TextAlignment.CENTER)
                 .setFontSize(26)
                 .setBold()
                 .setFontColor(new DeviceRgb(191, 144, 0))
+
                 .setMarginTop(10)); // Extra margin to space from the symbol
 
         // Decorative line below the title
@@ -175,12 +182,15 @@ TrainingController {
 
         // Introductory text
         document.add(new Paragraph("\nThis certificate is awarded to")
+
                 .setFont(PdfFontFactory.createFont(StandardFonts.TIMES_ROMAN))
                 .setTextAlignment(TextAlignment.CENTER)
                 .setFontSize(14)
                 .setFontColor(ColorConstants.BLACK));
 
+
         // Recipient's name
+
         document.add(new Paragraph(user.getFirstName().toUpperCase() + " " + user.getLastName().toUpperCase())
                 .setFont(PdfFontFactory.createFont(StandardFonts.TIMES_BOLD))
                 .setTextAlignment(TextAlignment.CENTER)
@@ -189,14 +199,18 @@ TrainingController {
                 .setFontColor(new DeviceRgb(0, 51, 102))
                 .setMarginBottom(10));
 
+<
         // Participation description
         document.add(new Paragraph("for their contributions to the training:\n")
+
                 .setFont(PdfFontFactory.createFont(StandardFonts.TIMES_ROMAN))
                 .setTextAlignment(TextAlignment.CENTER)
                 .setFontSize(14)
                 .setFontColor(ColorConstants.BLACK));
 
+
         // Training name
+
         document.add(new Paragraph(training.getTrainingName())
                 .setFont(PdfFontFactory.createFont(StandardFonts.TIMES_ITALIC))
                 .setTextAlignment(TextAlignment.CENTER)
@@ -205,7 +219,9 @@ TrainingController {
                 .setFontColor(new DeviceRgb(0, 51, 102))
                 .setMarginBottom(30));
 
+
         // Decorative line after the training
+
         canvas.setLineWidth(0.5f)
                 .setStrokeColor(new DeviceRgb(191, 144, 0))
                 .moveTo(150, pdf.getDefaultPageSize().getHeight() - 300)
@@ -223,6 +239,7 @@ TrainingController {
                 .setFontSize(11)
                 .setTextAlignment(TextAlignment.LEFT)
                 .setBackgroundColor(new DeviceRgb(245, 245, 245)) // Very light gray
+
                 .setBorder(new SolidBorder(new DeviceRgb(191, 144, 0), 1))
                 .setPadding(10)
                 .setMarginLeft(50)
@@ -230,9 +247,12 @@ TrainingController {
                 .setMarginBottom(30);
         document.add(trainingDetails);
 
+
         // Issuance date
         String dateNow = LocalDate.now().format(DateTimeFormatter.ofPattern("MM/dd/yyyy"));
         document.add(new Paragraph("Issued on: " + dateNow)
+
+
                 .setFont(PdfFontFactory.createFont(StandardFonts.TIMES_ROMAN))
                 .setTextAlignment(TextAlignment.CENTER)
                 .setFontSize(12)
@@ -248,7 +268,9 @@ TrainingController {
                 .setTextAlignment(TextAlignment.CENTER)
                 .setBorder(Border.NO_BORDER));
         signTable.addCell(new Cell()
+
                 .add(new Paragraph("Training Manager").setFont(PdfFontFactory.createFont(StandardFonts.TIMES_BOLD)).setBold())
+
                 .add(new Paragraph("_________________________"))
                 .setTextAlignment(TextAlignment.CENTER)
                 .setBorder(Border.NO_BORDER));
@@ -279,6 +301,7 @@ TrainingController {
         document.add(qrCode);
 
         // Watermark
+
         PdfFont watermarkFont = PdfFontFactory.createFont(StandardFonts.HELVETICA);
         canvas.saveState();
         canvas.setFillColor(new DeviceRgb(200, 200, 200));
@@ -294,7 +317,9 @@ TrainingController {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_PDF);
+
         headers.setContentDispositionFormData("filename", "certificate_" + user.getIdUser() + ".pdf");
+
 
         return ResponseEntity.ok()
                 .headers(headers)
