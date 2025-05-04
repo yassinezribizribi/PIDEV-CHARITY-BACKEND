@@ -75,8 +75,36 @@ public class JwtUtils {
 
         return claims.get("idUser", Long.class); // Extract idUser from claims
     }
+    public String getUserEmailFromJwtToken(String token) {
+        return getUserNameFromJwtToken(token); // Reuse subject as email
+    }
+    public String getUserFirstNameFromJwtToken(String token) {
+        try {
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(Keys.hmacShaKeyFor(jwtSecret.getBytes()))
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+            return claims.get("firstName", String.class);
+        } catch (Exception e) {
+            logger.error("❌ Failed to extract first name from JWT: {}", e.getMessage());
+            return null;
+        }
+    }
 
-
+    public String getUserLastNameFromJwtToken(String token) {
+        try {
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(Keys.hmacShaKeyFor(jwtSecret.getBytes()))
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+            return claims.get("lastName", String.class);
+        } catch (Exception e) {
+            logger.error("❌ Failed to extract last name from JWT: {}", e.getMessage());
+            return null;
+        }
+    }
     public boolean validateJwtToken(String authToken) {
         if (authToken == null || authToken.split("\\.").length != 3) {
             logger.error("❌ Invalid JWT format: {}", authToken);

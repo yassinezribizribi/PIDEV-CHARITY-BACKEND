@@ -2,10 +2,13 @@ package tn.esprit.examen.nomPrenomClasseExamen.entities;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.io.Serializable;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.Set;
@@ -27,16 +30,28 @@ public class Donation implements Serializable {
     private String description; // Details about the donation request
     private int quantiteDemandee; // Total amount needed (set by the association)
     private int quantiteDonnee ; // Total amount received (updated as donors contribute)
-
-    private Boolean availability;
-    private LocalDateTime lastUpdated;
+    //    private Boolean availability;
+    //    private LocalDateTime lastUpdated;
     private DonationType donationType;
-    //    // 🔹 DONOR contributes to an existing donation
-//    private String nomDoneur;
-//    private String prenomDoneur;
-//    private Long numCompte;//visitor
-//    private int quantite ;
+    private String imageUrl; // for one image
+    private LocalDate startDate;
+    private Date endDate;
+    //    @Transient // This field won't be saved in DB
+//    private Long suggestedExtensionDays;
+    @Min(1)
+    @Max(4)
+    private int priority; // 1 = Low, 2 = Medium, 3 = High, 4 = Urgent
+
     private int quantiteExcedentaire ; // NEW: To track excess donations
+
+    @PrePersist
+    public void onCreate() {
+        this.startDate = LocalDate.now(); // Set automatically on creation
+    }
+
+
+    @Enumerated(EnumType.STRING)
+    DonationStatus status = DonationStatus.ACTIVE; // Default when created
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "donation")
     @JsonIgnore // Prevent recursion here
@@ -44,13 +59,11 @@ public class Donation implements Serializable {
 
     @ManyToOne
     @JsonIgnore // Prevent recursion here
-
     Association associationDonation;
 
     @OneToOne(cascade = CascadeType.ALL)
     @JsonIgnore // Prevent recursion here
-
-    private CagnotteEnligne cagnotteenligne;
+    CagnotteEnligne cagnotteenligne;
     // 🔹 Update donation logic
     public void addDonation(int quantite) {
         int newTotal = this.quantiteDonnee + quantite;
@@ -60,6 +73,6 @@ public class Donation implements Serializable {
         }
 
         this.quantiteDonnee = newTotal;
-        this.lastUpdated = LocalDateTime.now();
+//        this.lastUpdated = LocalDateTime.now();
     }
 }

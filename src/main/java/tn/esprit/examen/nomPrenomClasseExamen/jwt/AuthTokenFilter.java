@@ -48,11 +48,11 @@ public class AuthTokenFilter extends OncePerRequestFilter {
 
         try {
             String jwt = parseJwt(request);
+            System.err.println(request.getHeader("Authorization"));
 
-            if (jwt == null) {
-                logger.warn("⛔ Aucun token JWT trouvé");
-                sendUnauthorizedError(response, "Authentication required");
-                return;
+            // For WebSocket requests, check query parameter
+            if (jwt == null && isWebSocketRequest(request)) {
+                jwt = request.getParameter("token");
             }
 
             if (!jwtUtils.validateJwtToken(jwt)) {
@@ -87,11 +87,40 @@ public class AuthTokenFilter extends OncePerRequestFilter {
 
         filterChain.doFilter(request, response);
     }
-
-    private boolean isPublicRoute(String uri, String method) {
-        return uri.startsWith("/api/auth/") ||
-                (uri.startsWith("/api/associations") && "POST".equalsIgnoreCase(method));
+    private boolean isWebSocketRequest(HttpServletRequest request) {
+        return request.getRequestURI().startsWith("/ws/");
     }
+    private boolean isPublicRoute(String uri, String method) {
+        // Only allow POST to /api/associations (create new association) without auth
+        return uri.startsWith("/api/auth/") ||
+                (uri.equals("/api/associations") && "POST".equalsIgnoreCase(method))||
+        (uri.startsWith( "/api/paiments/cagnotte") && "GET".equals(method))||
+                (uri.startsWith( "/api/donations/cagnotte") && "GET".equals(method)) ||
+                (uri.startsWith( "/api/paiments/spin/") && "GET".equals(method)) ||
+                (uri.startsWith( "/api/donations/sorted-active") && "GET".equals(method)) ||
+                (uri.startsWith( "/api/paiments/cagnotte/suggestions/") && "GET".equals(method)) ||
+                (uri.startsWith( "/api/dons/receipt/") && "GET".equals(method)) ||
+                (uri.startsWith( "/receipt/") && "GET".equals(method)) ||
+
+                (uri.startsWith("/api/paiments/create-payment-intent") && "POST".equals(method)) ||
+                (uri.startsWith("/api/associations") && "POST".equals(method)) ||
+                (uri.startsWith("/api/dons/update-dons/nonauth/"
+                ) && "POST".equals(method)) ||
+                (uri.startsWith("/api/dons/get-dons/nonauth/") && "GET".equals(method)) ||
+                (uri.startsWith("/api/dons/update-dons/nonauth/") && "PUT".equals(method)) ||
+
+
+                (uri.startsWith("/api/donations/getall") && "GET".equals(method)) ||
+                (uri.startsWith("/api/donations/get/") && "GET".equals(method)) ||
+                (uri.startsWith("/api/donations/find/") && "GET".equals(method)) ||
+                (uri.startsWith( "/api/dons/receipt/") && "POST".equals(method)) ||
+                (uri.startsWith( "/receipt/") && "POST".equals(method)) ||
+                (uri.startsWith("/api/dons/") && uri.endsWith("/contribute") && "POST".equals(method))
+
+        ;
+    }
+
+
 
     private String parseJwt(HttpServletRequest request) {
         String headerAuth = request.getHeader("Authorization");

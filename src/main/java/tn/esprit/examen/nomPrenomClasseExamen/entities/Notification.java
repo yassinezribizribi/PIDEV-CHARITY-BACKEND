@@ -1,31 +1,57 @@
 package tn.esprit.examen.nomPrenomClasseExamen.entities;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-
-import java.io.Serializable;
 import java.util.Date;
 
+@Entity
 @Getter
 @Setter
-@ToString
 @AllArgsConstructor
 @NoArgsConstructor
-@FieldDefaults(level= AccessLevel.PRIVATE)
-@Entity
-public class Notification implements Serializable {
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class Notification {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)  // Permet l'auto-incrémentation
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    Long id;
 
-    private Long idNotification;
-    private String message;
-    private Date dateTime;
+    String message;
+    String actionUrl;
+    @Column(name = "`read`") // Escape with backticks for MariaDB
+    private boolean read = false;
+    @Enumerated(EnumType.STRING)
+    NotificationType type;
+
+    @Temporal(TemporalType.TIMESTAMP)
+    Date createdAt = new Date();
+
     @ManyToOne
-    @JsonBackReference
-    private Association association;
+    @JoinColumn(name = "association_id")
+    Association association;
 
+    @ManyToOne
+    @JoinColumn(name = "healthcare_id")
+    Healthcare healthcare;
 
+    @ManyToOne
+    @JoinColumn(name = "subscriber_id", nullable = false)
+    Subscriber subscriber;
 
+    @ManyToOne
+    @JoinColumn(name = "sender_id")
+    Subscriber sender;
+
+    public enum NotificationType {
+        HEALTHCARE_UPDATE,
+        VIDEO_CALL,
+        APPOINTMENT_REMINDER,
+        TIER_CHANGE,
+        NEW_PARTNERSHIP,
+        PARTNERSHIP_REQUEST,
+        PARTNERSHIP_REMOVED,
+        IMPACT_REPORT,
+        SYSTEM_ALERT,
+        NEW_MESSAGE
+    }
 }

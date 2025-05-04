@@ -15,6 +15,8 @@ import tn.esprit.examen.nomPrenomClasseExamen.entities.Response;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.User;
 
 
+import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -103,10 +105,16 @@ public class RequestService {
         Response response = new Response();
         response.setContent(responseDto.getContent());
         response.setRequest(request); // Associer la réponse à la demande
+        response.setDateRespons(LocalDateTime.now());
+
 
         // Enregistrer la réponse dans la base de données
         return responseRepository.save(response);
     }
 
-}
+    public List<Request> getAllRequestsWithResponses() {
+        return requestRepository.findAll(); // assure-toi que les réponses sont chargées
+    }
 
+
+}

@@ -1,10 +1,12 @@
 package tn.esprit.examen.nomPrenomClasseExamen.entities;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.Set;
 
 @Getter
@@ -28,5 +30,8 @@ public class User implements Serializable{
     private String banreason;
     private String job;
 
+    @OneToMany(mappedBy = "utilisateur")
+    @JsonIgnore
+    private List<Paiement> paiements;
 
 }

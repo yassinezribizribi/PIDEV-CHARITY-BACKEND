@@ -1,6 +1,7 @@
 package tn.esprit.examen.nomPrenomClasseExamen.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Forum;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.JobApplication;
@@ -21,19 +22,26 @@ public class JobOfferDto implements Serializable {
     private String title;
     private String description;
     private String requirements;
-    private boolean isActive;
+    @JsonProperty("isActive")
+    private boolean active;
     private Long forumId;
     private Long createdById;  // Only include the creator's ID
     private LocalDateTime createdAt;
 
-    // Remove jobApplications and other complex fields
+    public boolean isActive() {
+        return active;
+    }
 
+    @JsonProperty("isActive")
+    public void setActive(boolean active) {
+        this.active = active;
+    }
     public JobOffer toJobOffer() {
         JobOffer jobOffer = new JobOffer();
         jobOffer.setTitle(this.title);
         jobOffer.setDescription(this.description);
         jobOffer.setRequirements(this.requirements);
-        jobOffer.setActive(this.isActive);
+        jobOffer.setActive(this.active);
 
         // Handle forumId in the service layer
         return jobOffer;
@@ -45,7 +53,7 @@ public class JobOfferDto implements Serializable {
                 jobOffer.getTitle(),
                 jobOffer.getDescription(),
                 jobOffer.getRequirements(),
-                jobOffer.isActive(),
+                jobOffer.isActive(), // 👈 Use the entity's getter method
                 jobOffer.getForum() != null ? jobOffer.getForum().getIdForum() : null,
                 jobOffer.getCreatedBy() != null ? jobOffer.getCreatedBy().getIdUser() : null,
                 jobOffer.getCreatedAt()

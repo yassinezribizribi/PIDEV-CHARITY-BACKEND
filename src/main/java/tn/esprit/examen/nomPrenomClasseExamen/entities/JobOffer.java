@@ -24,8 +24,18 @@ public class JobOffer {
     private String title;
     private String description;
     private String requirements;
-    private boolean isActive=true;
+    @Column(name = "is_active", columnDefinition = "BIT(1) DEFAULT 1")
+    private boolean isActive;
+    @Column(name = "report_count")
+    private Integer reportCount = 0;
+    // ADD PROPER BOOLEAN GETTER
+    public boolean isActive() {  // 👈 Crucial for Hibernate mapping
+        return isActive;
+    }
 
+    public void setActive(boolean active) {
+        isActive = active;
+    }
     @ManyToOne
     @JsonIgnoreProperties
     private Forum forum;

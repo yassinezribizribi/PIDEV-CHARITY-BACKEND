@@ -28,6 +28,19 @@ public class Subscriber extends User {
     @Column(nullable = true)
     private String associationRole;
 
+
+    private String cvFilePath; // ✅ NEW: to store uploaded CV file
+    @Column(length = 500)
+    private String rejectionReason;
+    @Enumerated(EnumType.STRING)
+    private VolunteerStatus validationStatus = VolunteerStatus.NOT_VALIDATED; // ✅ NEW
+
+    // ➡️ NEW RELATION: PARTICIPATIONS
+    @OneToMany(mappedBy = "subscriber", cascade = CascadeType.ALL)
+    @JsonIgnore
+    private Set<Participation> participations;
+
+
     @ManyToOne
     private Healthcare healthcare;
 

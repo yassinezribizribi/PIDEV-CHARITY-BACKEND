@@ -1,11 +1,10 @@
 package tn.esprit.examen.nomPrenomClasseExamen.entities;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import java.io.Serializable;
-import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -13,9 +12,7 @@ import java.util.Set;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString
 public class Association implements Serializable {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idAssociation;
@@ -24,48 +21,49 @@ public class Association implements Serializable {
     private String associationName;
     private String description;
 
-    @Enumerated(EnumType.STRING) // Storing as string in the database
-    private AssociationStatus status = AssociationStatus.PENDING; // Default status is PENDING
+    @Enumerated(EnumType.STRING)
+    private AssociationStatus status = AssociationStatus.PENDING;
 
-    // Association.java
-    public enum AssociationStatus {
-        PENDING,
-        APPROVED,
-        REJECTED;
-
-        @JsonCreator
-        public static AssociationStatus fromValue(String value) {
-            return Arrays.stream(values())
-                    .filter(status -> status.name().equalsIgnoreCase(value))
-                    .findFirst()
-                    .orElse(PENDING); // Default to PENDING if the value is invalid
-        }
-    }
-
-
-    // Instead of storing large binary data, store file paths (more efficient)
     private String associationLogoPath;
     private String registrationDocumentPath;
     private String legalDocumentPath;
 
-    // ✅ Relationship with Subscriber (1-1)
     @OneToOne
     private Subscriber subscriber;
 
-    // ✅ Other relationships
     @ManyToMany(cascade = CascadeType.ALL)
-    @JsonManagedReference
-    private Set<Subscription> subscriptions;
+    private Set<Subscription> subscriptions = new HashSet<>();
 
-    @ManyToMany(cascade = CascadeType.ALL)
-    @JsonManagedReference
-    private Set<Mission> missions;
+    @ManyToMany(mappedBy = "associations")
+    @JsonIgnore
+    private Set<Mission> missions = new HashSet<>();
+
+
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "association")
-    @JsonManagedReference
-    private Set<Event> events;
+    private Set<Event> events = new HashSet<>();
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "association")
-    @JsonManagedReference
-    private Set<Notification> notifications;
+    private Set<Notification> notifications = new HashSet<>();
+
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinTable(
+            name = "association_partnerships",
+            joinColumns = @JoinColumn(name = "association_id"),
+            inverseJoinColumns = @JoinColumn(name = "partner_id")
+    )
+    private Set<Association> partners = new HashSet<>();
+
+    private Integer partnershipScore = 0;
+
+    @Enumerated(EnumType.STRING)
+    private PartnershipTier partnershipTier = PartnershipTier.BRONZE;
+
+    public enum AssociationStatus {
+        PENDING, APPROVED, REJECTED
+    }
+
+    public enum PartnershipTier {
+        BRONZE, SILVER, GOLD
+    }
 }
