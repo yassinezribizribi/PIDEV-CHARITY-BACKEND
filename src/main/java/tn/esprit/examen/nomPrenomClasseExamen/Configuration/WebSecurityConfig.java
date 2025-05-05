@@ -55,13 +55,37 @@ public class WebSecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/associations/*/partners/*").hasAnyRole("ASSOCIATION_MEMBER", "ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/associations/*/partners").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/associations/*/partners/*").hasAnyRole("ASSOCIATION_MEMBER", "ADMIN")
-                        // Other existing rules
+                        // Donation endpoints
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/donations/**",
+                                "/api/donations/getall",
+                                "/api/donations/sorted-active",
+                                "/api/donations/get/**",
+                                "/api/donations/find/{donationType}",
+                                "/api/paiments/cagnotte/**",
+                                "/api/paiments/cagnotte/suggestions/",
+                                "/api/paiments/spin/**",
+                                "/api/dons/receipt/",
+                                "/api/dons/receipt/**",
+
+                                "/api/dons/get-dons/nonauth/**"
+                        ).permitAll()
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/dons/**",
+                                "/api/paiments/create-payment-intent/**",
+                                "/api/dons/update-dons/nonauth/**"
+
+                        ).permitAll()
+                        .requestMatchers(HttpMethod.PUT,
+
+                                "/api/dons/update-dons/nonauth/**"
+
+                        ).permitAll()
                         .requestMatchers(HttpMethod.PUT, "/api/associations/*/verify").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/associations").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/associations/list").permitAll()
+                        .anyRequest().authenticated())
 
-                        .anyRequest().authenticated()
-                )
                 .addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint((request, response, authException) -> {

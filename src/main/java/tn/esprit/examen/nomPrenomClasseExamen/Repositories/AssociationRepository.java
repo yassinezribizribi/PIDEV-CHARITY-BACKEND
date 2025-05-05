@@ -28,6 +28,7 @@ public interface AssociationRepository extends JpaRepository<Association, Long>,
     List<Association> findNonPartnerAssociations(@Param("currentId") Long currentId);
 
 
+
     Optional<Association> findByAssociationAddress(String associationAddress);
 
 }

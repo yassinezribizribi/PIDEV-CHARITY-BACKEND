@@ -7,7 +7,10 @@ import tn.esprit.examen.nomPrenomClasseExamen.Repositories.SubscriberRepository;
 import tn.esprit.examen.nomPrenomClasseExamen.dto.SignupRequestDto;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Role;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Subscriber;
+import tn.esprit.examen.nomPrenomClasseExamen.entities.VolunteerStatus;
 import tn.esprit.examen.nomPrenomClasseExamen.jwt.JwtUtils;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -38,6 +41,15 @@ public class SubscriberServices implements ISubscriberServices {
         }
 
         return subscriberRepository.save(subscriber);
+    }
+    public Subscriber findByUsername(String username) {
+        return subscriberRepository.findByEmail(username).orElse(null);
+    }
+    public List<Subscriber> getPendingVolunteers() {
+        return subscriberRepository.findByValidationStatusAndRole(
+                VolunteerStatus.PENDING_VALIDATION,
+                Role.VOLUNTEER
+        );
     }
 
     private void validateRoleFields(SignupRequestDto request) {
