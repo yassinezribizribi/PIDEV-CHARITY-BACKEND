@@ -66,4 +66,4 @@ public class Association implements Serializable {
     public enum PartnershipTier {
         BRONZE, SILVER, GOLD
     }
-}
+}git 
