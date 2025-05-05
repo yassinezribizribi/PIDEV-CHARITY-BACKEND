@@ -1,5 +1,10 @@
 package tn.esprit.examen.nomPrenomClasseExamen.dto;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.CagnotteEnligne;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Paiement;
@@ -16,12 +21,22 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class CagnotteDTO implements Serializable {
     private Long idCagnotte;
-    private String title;
-    private String description;
-    private float goalAmount;
-    private float currentAmount;
-    private Set<PaiementDTO> paiements;
 
+    @NotBlank(message = "Title is required")
+    @Size(min = 3, max = 100)
+    private String title;
+
+    @NotBlank(message = "Description is required")
+    @Size(min = 10, max = 500)
+    private String description;
+
+    @Positive(message = "Goal amount must be positive")
+    private float goalAmount;
+
+    @PositiveOrZero(message = "Current amount must be zero or positive")
+    private float currentAmount;
+
+    private Set<@Valid PaiementDTO> paiements;
     public CagnotteEnligne toCagnotteEnligne() {
         CagnotteEnligne cagnotteEnligne = new CagnotteEnligne();
         cagnotteEnligne.setIdCagnotte(this.idCagnotte);

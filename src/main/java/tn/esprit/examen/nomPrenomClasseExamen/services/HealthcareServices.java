@@ -79,12 +79,7 @@ public class HealthcareServices implements IHealthcareServices {
             byte[] pdf = pdfService.generatePdfFromHealthcare(saved);
             String refugeeEmail = healthcare.getSubscriber().getEmail();
 
-            emailService.sendEmailWithAttachment(
-                    refugeeEmail,
-                    pdf,
-                    "rapport_soin_" + saved.getIdHealthcare() + ".pdf"
 
-            );
         }
 
         return saved;

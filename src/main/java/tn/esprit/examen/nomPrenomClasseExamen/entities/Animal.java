@@ -17,6 +17,7 @@ public class Animal implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)  // Permet l'auto-incrémentation
 
+
     private Long IdAnimal;
     private String name;
     private String animalSpecies;

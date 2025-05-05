@@ -10,7 +10,6 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,7 +23,9 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import tn.esprit.examen.nomPrenomClasseExamen.jwt.AuthTokenFilter;
 import tn.esprit.examen.nomPrenomClasseExamen.jwt.CustomAccessDeniedHandler;
 import tn.esprit.examen.nomPrenomClasseExamen.jwt.CustomAuthenticationSuccessHandler;
+import tn.esprit.examen.nomPrenomClasseExamen.services.SubscriberDetailsServiceImpl;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -36,6 +37,7 @@ public class WebSecurityConfig {
     private final AuthTokenFilter authTokenFilter;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
     private final CustomAuthenticationSuccessHandler customAuthenticationSuccessHandler;
+    private final SubscriberDetailsServiceImpl userDetailsService;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -43,56 +45,65 @@ public class WebSecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .headers(headers -> headers
-                        .frameOptions(frameOptions -> frameOptions.disable()) // 🔥 Corrigé ici : disable() pour autoriser iframe
-                )
+                .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable()))
                 .authorizeHttpRequests(auth -> auth
-                        // 📂 Public endpoints
+                        // Public WebSocket and static resources
+                        .requestMatchers("/ws/**", "/topic/**", "/assets/**", "/queue/**", "/app/**", "/user/**").permitAll()
+
+                        // Auth routes
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/error").permitAll()
-                        .requestMatchers("/api/translate").permitAll()
+                        .requestMatchers("/api/auth/**", "/error").permitAll()
 
-                        // 📂 Public Testimonials
-                        .requestMatchers(HttpMethod.GET, "/api/testimonials/all").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/testimonials/images/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/testimonials/media/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/testimonials/search/**").permitAll()
+                        // Translation & Report
+                        .requestMatchers("/api/translate", "/report/**").permitAll()
 
-                        // 📂 Healthcare (public report access)
-                        .requestMatchers(HttpMethod.GET, "/api/healthcare/export").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/healthcare/report-url").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/report/**").permitAll() // 🔥 PDFs accessibles sans token
+                        // Public testimonials
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/testimonials/all",
+                                "/api/testimonials/images/**",
+                                "/api/testimonials/media/**",
+                                "/api/testimonials/search/**").permitAll()
 
-                        // 🔒 Secure Testimonials
-                        .requestMatchers(HttpMethod.POST, "/api/testimonials/**").authenticated()
-                        .requestMatchers(HttpMethod.PUT, "/api/testimonials/**").authenticated()
-                        .requestMatchers(HttpMethod.DELETE, "/api/testimonials/**").authenticated()
+                        // Public healthcare reports
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/healthcare/export",
+                                "/api/healthcare/report-url").permitAll()
 
-                        // 🔒 Associations & Donations secured
+                        // Public associations & donations
+                        .requestMatchers(HttpMethod.POST, "/api/associations", "/api/associations/list").permitAll()
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/donations/**",
+                                "/api/donations/getall",
+                                "/api/donations/sorted-active",
+                                "/api/donations/get/**",
+                                "/api/donations/find/**",
+                                "/api/paiments/cagnotte/**",
+                                "/api/paiments/cagnotte/suggestions/**",
+                                "/api/paiments/spin/**",
+                                "/api/dons/get-dons/nonauth/**",
+                                "/api/dons/receipt/**").permitAll()
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/paiments/create-payment-intent/**",
+                                "/api/dons/**",
+                                "/api/dons/update-dons/nonauth/**").permitAll()
+                        .requestMatchers(HttpMethod.PUT,
+                                "/api/dons/update-dons/nonauth/**").permitAll()
+
+                        // Secured associations
                         .requestMatchers(HttpMethod.POST, "/api/associations/*/partners/*").hasAnyRole("ASSOCIATION_MEMBER", "ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/associations/*/partners").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/associations/*/partners/*").hasAnyRole("ASSOCIATION_MEMBER", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/associations/*/verify").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/associations").permitAll()
 
-                        // 📂 Public Donations
-                        .requestMatchers(HttpMethod.GET,
-                                "/api/donations/**",
-                                "/api/donations/getall",
-                                "/api/donations/get/**",
-                                "/api/donations/find/{donationType}").permitAll()
-                        .requestMatchers(HttpMethod.POST,
-                                "/api/dons/**",
-                                "/api/paiments/create-payment-intent/**").permitAll()
+                        // Protected files
+                        .requestMatchers("/protected/files/**").authenticated()
 
-                        // 🔒 All Other Requests
+                        // All other routes
                         .anyRequest().authenticated()
                 )
-                .exceptionHandling(exception -> exception
-                        .authenticationEntryPoint((request, response, authException) -> {
-                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
-                        })
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, authException) ->
+                                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized"))
                         .accessDeniedHandler(customAccessDeniedHandler)
                 )
                 .addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class)
@@ -105,8 +116,8 @@ public class WebSecurityConfig {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
-        return authenticationConfiguration.getAuthenticationManager();
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
     }
 
     @Bean
@@ -119,14 +130,13 @@ public class WebSecurityConfig {
     }
 
     @Bean
-    public WebSecurityCustomizer webSecurityCustomizer(HttpFirewall firewall) {
-        return (web) -> web.httpFirewall(firewall);
-    }
-
-    @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOriginPatterns(List.of("http://localhost:4200"));
+        config.setAllowedOriginPatterns(List.of(
+                "http://localhost:4200",
+                "https://datastudio.google.com",
+                "https://lookerstudio.googleusercontent.com"
+        ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
         config.setAllowCredentials(true);

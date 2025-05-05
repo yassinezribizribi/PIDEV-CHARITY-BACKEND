@@ -1,51 +1,47 @@
 package tn.esprit.examen.nomPrenomClasseExamen.dto;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
-import lombok.*;
+import lombok.Getter;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.JobApplication;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.JobApplicationStatus;
-import tn.esprit.examen.nomPrenomClasseExamen.entities.JobOffer;
-import tn.esprit.examen.nomPrenomClasseExamen.entities.Subscriber;
-
 import java.time.LocalDateTime;
 
 @Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
 public class JobApplicationDto {
+    private final Long idApplication;
+    private final LocalDateTime applicationDate;
+    private final JobApplicationStatus status;
+    private final Long jobOfferId;
+    private final String jobTitle;
+    private final ApplicantDto applicant;
 
-    private Long idApplication;
-
-    private LocalDateTime applicationDate;
-    @NotNull(message = "Job Application Status cannot be null")
-    private JobApplicationStatus jobApplicationStatus;
-    @JsonManagedReference
-    private Long jobOfferId;
-    @JsonManagedReference
-    private Subscriber applicant;
-
-    // Méthode statique pour convertir une entité en DTO
-    public static JobApplicationDto fromEntity(JobApplication jobApplication) {
-        return new JobApplicationDto(
-                jobApplication.getIdApplication(),
-                jobApplication.getApplicationDate(),
-                jobApplication.getJobApplicationStatus(),
-                jobApplication.getJobOffer() != null ? jobApplication.getJobOffer().getIdJobOffer() : null,
-                jobApplication.getApplicant() // Include the full Subscriber object
-        );
+    public JobApplicationDto(Long idApplication,
+                             LocalDateTime applicationDate,
+                             JobApplicationStatus status,
+                             Long jobOfferId,
+                             String jobTitle,
+                             ApplicantDto applicant) {
+        this.idApplication = idApplication;
+        this.applicationDate = applicationDate;
+        this.status = status;
+        this.jobOfferId = jobOfferId;
+        this.jobTitle = jobTitle;
+        this.applicant = applicant;
     }
 
-    // Méthode statique pour convertir un DTO en entité
-    public static JobApplication toEntity(JobApplicationDto dto, JobOffer jobOffer, Subscriber applicant) {
-        return new JobApplication(
-                dto.getIdApplication(),
-                dto.getApplicationDate(),
-                dto.getJobApplicationStatus(),
-                jobOffer,
-                dto.getApplicant() // Include the full Subscriber object
+    public static JobApplicationDto fromEntity(JobApplication application) {
+        return new JobApplicationDto(
+                application.getIdApplication(),
+                application.getApplicationDate(),
+                application.getJobApplicationStatus(),
+                application.getJobOffer().getIdJobOffer(),
+                application.getJobOffer().getTitle(),
+                new ApplicantDto(
+                        application.getApplicant().getIdUser(),
+                        application.getApplicant().getFirstName(),
+                        application.getApplicant().getLastName(),
+                        application.getApplicant().getEmail(),
+                        application.getApplicant().getTelephone()
+                )
         );
     }
 }

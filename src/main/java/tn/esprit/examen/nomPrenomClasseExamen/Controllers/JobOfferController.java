@@ -4,8 +4,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import org.springframework.web.bind.annotation.*;
@@ -13,10 +15,12 @@ import tn.esprit.examen.nomPrenomClasseExamen.dto.JobApplicationDto;
 import tn.esprit.examen.nomPrenomClasseExamen.dto.JobOfferDto;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.JobApplication;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.JobOffer;
+import tn.esprit.examen.nomPrenomClasseExamen.services.AssociationServices;
 import tn.esprit.examen.nomPrenomClasseExamen.services.JobApplicationServices;
 import tn.esprit.examen.nomPrenomClasseExamen.services.JobOfferServices;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/jobOffers")
@@ -106,11 +110,48 @@ public class JobOfferController {
             logger.error("Internal server error: {}", e.getMessage());
             return ResponseEntity.internalServerError().build();
         }
+
+
     }
 
+    @PostMapping("/{jobOfferId}/report")
+    public ResponseEntity<?> reportJobOffer(
+            @PathVariable Long jobOfferId,
+            @RequestParam Long reporterId) {
+        try {
+            jobOfferService.reportJobOffer(jobOfferId, reporterId);
+            return ResponseEntity.ok().body("Report submitted successfully");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 
+    @GetMapping("/{jobOfferId}/reports")
+    public ResponseEntity<Integer> getJobOfferReportCount(@PathVariable Long jobOfferId) {
+        try {
+            Integer count = jobOfferService.getJobOfferReportCount(jobOfferId);
+            return ResponseEntity.ok(count);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(0);
+        }
+    }
 
+    @PutMapping("/users/{userId}/ban")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> banUser(
+            @PathVariable Long userId,
+            @RequestParam boolean isBanned,
+            @RequestParam(required = false) String banReason) {
 
-
-
-}
+        try {
+            jobOfferService.banUser(userId, isBanned, banReason);
+            return ResponseEntity.ok().body(Map.of(
+                    "message", isBanned ? "User banned successfully" : "User unbanned successfully"
+            ));
+        } catch (AssociationServices.ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to update user status"));
+        }
+    }}

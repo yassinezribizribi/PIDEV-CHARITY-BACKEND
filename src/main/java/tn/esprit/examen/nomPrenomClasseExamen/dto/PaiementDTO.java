@@ -1,5 +1,8 @@
 package tn.esprit.examen.nomPrenomClasseExamen.dto;
 
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PastOrPresent;
+import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,7 +15,12 @@ import java.util.Date;
 @AllArgsConstructor
 public class PaiementDTO {
     private Long idPaiement;
+
+    @NotNull(message = "Payment date is required")
+    @PastOrPresent(message = "Payment date cannot be in the future")
     private Date datePaiement;
+
+    @Positive(message = "Amount must be greater than zero")
     private int montant;
 
     public Paiement toPaiement() {

@@ -52,7 +52,7 @@ public class ResponseController {
 
     // Dans ton contrôleur :
     @PostMapping("/add")
-    public ResponseEntity<Response> addResponse( @RequestBody Response ResponseDto) {
+    public ResponseEntity<Response> addResponse(@RequestBody Response ResponseDto) {
         Request request = requestRepository.findById(ResponseDto.getRequest().getIdRequest())
                 .orElseThrow(() -> new NoSuchElementException("Request not found"));
 
@@ -66,7 +66,6 @@ public class ResponseController {
         Response savedResponse = responseRepository.save(ResponseDto);  // Sauvegarder la réponse dans la DB
         return ResponseEntity.ok(savedResponse);
     }
-
 
 
     @PutMapping("/update/{id}")
