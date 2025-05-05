@@ -29,6 +29,7 @@ public class User implements Serializable{
     private String job;
 
     private String location;
+    private String profileImage;
 
 
 

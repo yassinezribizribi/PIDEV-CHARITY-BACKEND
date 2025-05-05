@@ -26,7 +26,7 @@ public class Notification {
     @Temporal(TemporalType.TIMESTAMP)
     Date createdAt = new Date();
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "association_id")
     Association association;
 

@@ -14,6 +14,7 @@ import tn.esprit.examen.nomPrenomClasseExamen.services.SubDetailsImpl;
 
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -93,6 +94,15 @@ public class JwtUtils {
         }
 
         return false;
+    }
+    public List<String> getRolesFromJwtToken(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(Keys.hmacShaKeyFor(jwtSecret.getBytes()))
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+
+        return claims.get("roles", List.class);
     }
 
 }

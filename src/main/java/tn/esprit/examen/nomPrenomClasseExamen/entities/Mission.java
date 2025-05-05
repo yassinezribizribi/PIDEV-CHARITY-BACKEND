@@ -1,8 +1,8 @@
 package tn.esprit.examen.nomPrenomClasseExamen.entities;
+
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
@@ -13,35 +13,30 @@ import java.util.Set;
 @ToString
 @AllArgsConstructor
 @NoArgsConstructor
-@FieldDefaults(level= AccessLevel.PRIVATE)
+@FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
 
-public class Mission implements Serializable{
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-
+public class Mission implements Serializable {
     @Id
-    private Long idMission;
-    private String description;
-    private String location;
-    private Date startDate;
-    private Date endDate;
-    private int volunteerCount;
-    private MissionStatus status;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    Long idMission;
 
-    @ManyToMany(mappedBy="missions", cascade = CascadeType.ALL)
-    private Set<Association> associations;
+    String description;
+    String location;
+    Date startDate;
+    Date endDate;
+    int volunteerCount;
+    MissionStatus status;
+
+    @ManyToMany(mappedBy = "missions", cascade = CascadeType.ALL)
+    Set<Association> associations;
 
     @ManyToOne
+    @JoinColumn(name = "crisis_id") // Explicitly define the foreign key column
     Crisis crisis;
 
     @ElementCollection
     @CollectionTable(name = "mission_tags", joinColumns = @JoinColumn(name = "mission_id"))
     @Column(name = "tag")
-    private List<String> tags;  // You can use Set<String> if you prefer unique tags
-
-
-
-//    @OneToMany(cascade = CascadeType.ALL, mappedBy="missionsubscriber")
-//    private Set<Subscriber> subscribersMission;
-
+    List<String> tags;
 }

@@ -1,4 +1,5 @@
 package tn.esprit.examen.nomPrenomClasseExamen.entities;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -21,6 +22,8 @@ public class Crisis implements Serializable {
     @Enumerated(EnumType.STRING) // au lieu de ORDINAL (valeur par défaut)
     private Categorie categorie;
     private String location;
+    @JsonManagedReference
+
     private String updates;
     private String description;
     @Temporal(TemporalType.TIMESTAMP)
