@@ -18,6 +18,13 @@ import tn.esprit.examen.nomPrenomClasseExamen.services.CrisisServices;
 import tn.esprit.examen.nomPrenomClasseExamen.services.ICrisisServices;
 import tn.esprit.examen.nomPrenomClasseExamen.services.SmsService;
 
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+
+
 import java.security.Principal;
 import java.util.Arrays;
 import java.util.List;
@@ -35,6 +42,7 @@ public class CrisisController {
     private final SubscriberRepository subscriberRepository;
     private final SmsService smsService;
     private final CrisisServices crisisServices;
+    private final CrisisRepository crisisRepository;
 
 
 
@@ -91,8 +99,13 @@ public class CrisisController {
     }
 
     @GetMapping("/all")
-    public ResponseEntity<List<Crisis>> getAllCrises() {
-        return ResponseEntity.ok(crisisService.getAllCrises());
+    public ResponseEntity<Page<Crisis>> getAllCrises(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("crisisDate").descending());
+        Page<Crisis> crises = crisisRepository.findAll(pageable);
+        return ResponseEntity.ok(crises);
     }
 
     @GetMapping("/status/{status}")
@@ -153,6 +166,7 @@ public class CrisisController {
         CrisisAssignmentResponse response = crisisService.assignCrisisToAssociation(crisisId);
         return ResponseEntity.ok(response);
     }
+
 
     @GetMapping("/saturated-zones")
     public ResponseEntity<List<String>> getSaturatedZones(@RequestParam(defaultValue = "3") int threshold) {
