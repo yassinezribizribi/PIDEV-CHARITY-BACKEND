@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -14,6 +15,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.firewall.HttpFirewall;
+import org.springframework.security.web.firewall.StrictHttpFirewall;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -23,9 +26,11 @@ import tn.esprit.examen.nomPrenomClasseExamen.jwt.CustomAuthenticationSuccessHan
 import tn.esprit.examen.nomPrenomClasseExamen.services.SubscriberDetailsServiceImpl;
 
 import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 @AllArgsConstructor
 public class WebSecurityConfig {
 
@@ -40,83 +45,104 @@ public class WebSecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable()))
                 .authorizeHttpRequests(auth -> auth
+                        // Public WebSocket and static resources
+                        .requestMatchers("/ws/**", "/topic/**", "/assets/**", "/queue/**", "/app/**", "/user/**").permitAll()
+
+                        // Auth routes
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/ws/**").permitAll() // Allow WebSocket connections
-                        .requestMatchers("/topic/**").permitAll()
-                        .requestMatchers("/assets/**").permitAll()
-                        .requestMatchers("/queue/**").permitAll()
-                        .requestMatchers("/app/**").permitAll()
-                        .requestMatchers("/user/**").permitAll()
-                        .requestMatchers("/protected/files/**").authenticated()
-                        .requestMatchers("/error").permitAll()
-                        // Add these specific rules for partnership endpoints
-                        .requestMatchers(HttpMethod.POST, "/api/associations/*/partners/*").hasAnyRole("ASSOCIATION_MEMBER", "ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/associations/*/partners").authenticated()
-                        .requestMatchers(HttpMethod.DELETE, "/api/associations/*/partners/*").hasAnyRole("ASSOCIATION_MEMBER", "ADMIN")
-                        // Donation endpoints
+                        .requestMatchers("/api/auth/**", "/error").permitAll()
+
+                        // Translation & Report
+                        .requestMatchers("/api/translate", "/report/**").permitAll()
+
+                        // Public testimonials
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/testimonials/all",
+                                "/api/testimonials/images/**",
+                                "/api/testimonials/media/**",
+                                "/api/testimonials/search/**").permitAll()
+
+                        // Public healthcare reports
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/healthcare/export",
+                                "/api/healthcare/report-url").permitAll()
+
+                        // Public associations & donations
+                        .requestMatchers(HttpMethod.POST, "/api/associations", "/api/associations/list").permitAll()
                         .requestMatchers(HttpMethod.GET,
                                 "/api/donations/**",
                                 "/api/donations/getall",
                                 "/api/donations/sorted-active",
                                 "/api/donations/get/**",
-                                "/api/donations/find/{donationType}",
+                                "/api/donations/find/**",
                                 "/api/paiments/cagnotte/**",
-                                "/api/paiments/cagnotte/suggestions/",
+                                "/api/paiments/cagnotte/suggestions/**",
                                 "/api/paiments/spin/**",
-                                "/api/dons/receipt/",
-                                "/api/dons/receipt/**",
-
-                                "/api/dons/get-dons/nonauth/**"
-                        ).permitAll()
+                                "/api/dons/get-dons/nonauth/**",
+                                "/api/dons/receipt/**").permitAll()
                         .requestMatchers(HttpMethod.POST,
-                                "/api/dons/**",
                                 "/api/paiments/create-payment-intent/**",
-                                "/api/dons/update-dons/nonauth/**"
-
-                        ).permitAll()
+                                "/api/dons/**",
+                                "/api/dons/update-dons/nonauth/**").permitAll()
                         .requestMatchers(HttpMethod.PUT,
+                                "/api/dons/update-dons/nonauth/**").permitAll()
 
-                                "/api/dons/update-dons/nonauth/**"
-
-                        ).permitAll()
+                        // Secured associations
+                        .requestMatchers(HttpMethod.POST, "/api/associations/*/partners/*").hasAnyRole("ASSOCIATION_MEMBER", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/associations/*/partners").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/associations/*/partners/*").hasAnyRole("ASSOCIATION_MEMBER", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/associations/*/verify").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/associations").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/associations/list").permitAll()
-                        .anyRequest().authenticated())
 
-                .addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class)
-                .exceptionHandling(exception -> exception
-                        .authenticationEntryPoint((request, response, authException) -> {
-                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
-                        })
+                        // Protected files
+                        .requestMatchers("/protected/files/**").authenticated()
+
+                        // All other routes
+                        .anyRequest().authenticated()
+                )
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, authException) ->
+                                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized"))
                         .accessDeniedHandler(customAccessDeniedHandler)
                 )
+                .addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
-        return authenticationConfiguration.getAuthenticationManager();
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
     }
 
-    // CORS Configuration
+    @Bean
+    public HttpFirewall allowUrlEncodedDoubleSlashHttpFirewall() {
+        StrictHttpFirewall firewall = new StrictHttpFirewall();
+        firewall.setAllowUrlEncodedDoubleSlash(true);
+        firewall.setAllowBackSlash(true);
+        firewall.setAllowUrlEncodedPercent(true);
+        return firewall;
+    }
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOriginPatterns(Arrays.asList("http://localhost:4200")); // Allow your frontend origin
-        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS","PATCH")); // Allow necessary methods
-        config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept")); // Allow necessary headers
-        config.setAllowCredentials(true); // Allow credentials (e.g., cookies, authorization headers)
+        config.setAllowedOriginPatterns(List.of(
+                "http://localhost:4200",
+                "https://datastudio.google.com",
+                "https://lookerstudio.googleusercontent.com"
+        ));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
+        config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config); // Apply to all endpoints
+        source.registerCorsConfiguration("/**", config);
         return source;
     }
-
 }

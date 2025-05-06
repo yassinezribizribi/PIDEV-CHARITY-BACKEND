@@ -17,10 +17,12 @@ import java.util.List;
 @CrossOrigin(origins = "http://localhost:4200")
 @RequiredArgsConstructor
 public class NotificationController {
+
     private final INotificationService notificationService;
     private final JwtUtils jwtUtils;
     private final ConversationService conversationService;
 
+    // ✅ Notifications générales de l'utilisateur
     @GetMapping
     @PreAuthorize("hasAnyRole('ROLE_REFUGEE', 'ROLE_ASSOCIATION')")
     public ResponseEntity<List<NotificationDTO>> getNotifications(@RequestHeader("Authorization") String authHeader) {
@@ -29,20 +31,32 @@ public class NotificationController {
         return ResponseEntity.ok(notificationService.getNotificationsForSubscriber(userId));
     }
 
+    // ✅ Notifications liées aux soins médicaux
+    @GetMapping("/healthcare")
+    @PreAuthorize("hasAnyRole('ROLE_REFUGEE')")
+    public ResponseEntity<List<NotificationDTO>> getHealthcareNotifications(@RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.replace("Bearer ", "").trim();
+        Long userId = jwtUtils.getUserIdFromJwtToken(token);
+        return ResponseEntity.ok(notificationService.getHealthcareNotificationsForSubscriber(userId));
+    }
+
+    // ✅ Marquer une notification comme lue
+    @PostMapping("/{id}/read")
+    @PreAuthorize("hasAnyRole('ROLE_REFUGEE', 'ROLE_ASSOCIATION')")
+    public ResponseEntity<Void> markNotificationAsRead(@PathVariable Long id) {
+        notificationService.markAsRead(id);
+        return ResponseEntity.ok().build();
+    }
+
+    // ✅ Récupérer les messages non lus (conversation)
     @GetMapping("/unread/{userId}")
     public List<Message> getUnreadMessages(@PathVariable Long userId) {
         return conversationService.getUnreadMessages(userId);
     }
 
-    @PutMapping("/{messageId}/read")
-    public void markMessageAsRead(@PathVariable Long messageId) {
+    // ✅ Marquer un message comme lu (conversation)
+    @PutMapping("/message/{messageId}/read")
+    public void markSingleMessageAsRead(@PathVariable Long messageId) {
         conversationService.markSingleMessageAsRead(messageId);
-    }
-
-    @PostMapping("/{id}/read")
-    @PreAuthorize("hasAnyRole('ROLE_REFUGEE', 'ROLE_ASSOCIATION')")
-    public ResponseEntity<Void> markAsRead(@PathVariable Long id) {
-        notificationService.markAsRead(id);
-        return ResponseEntity.ok().build();
     }
 }

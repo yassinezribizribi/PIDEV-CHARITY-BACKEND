@@ -16,6 +16,8 @@ import tn.esprit.examen.nomPrenomClasseExamen.dto.*;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.*;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Notification.NotificationType;
 import tn.esprit.examen.nomPrenomClasseExamen.jwt.JwtUtils;
+import tn.esprit.examen.nomPrenomClasseExamen.entities.Notification; // ✅ Correct
+
 
 import java.util.*;
 import java.util.stream.Collectors;
