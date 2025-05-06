@@ -1,17 +1,13 @@
 package tn.esprit.examen.nomPrenomClasseExamen.services;
 
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import tn.esprit.examen.nomPrenomClasseExamen.Repositories.AssociationRepository;
-import tn.esprit.examen.nomPrenomClasseExamen.Repositories.CrisisRepository;
-import tn.esprit.examen.nomPrenomClasseExamen.Repositories.SubscriberRepository;
-import tn.esprit.examen.nomPrenomClasseExamen.Repositories.UserRepository;
+import tn.esprit.examen.nomPrenomClasseExamen.Repositories.*;
 import tn.esprit.examen.nomPrenomClasseExamen.dto.CrisisAssignmentResponse;
 import tn.esprit.examen.nomPrenomClasseExamen.dto.CrisisDTO;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.*;
@@ -19,11 +15,9 @@ import tn.esprit.examen.nomPrenomClasseExamen.entities.*;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.Pageable;
 
 @Service
 @Slf4j
@@ -42,7 +36,7 @@ public class CrisisServices implements ICrisisServices {
     @Override
     public Crisis addCrisis(CrisisDTO crisisDTO) {
         if (crisisDTO == null) {
-            throw new IllegalArgumentException("Les données de la crise sont nulles.");
+            throw new IllegalArgumentException("Crisis data cannot be null");
         }
 
         Crisis crisis = new Crisis();
@@ -53,39 +47,34 @@ public class CrisisServices implements ICrisisServices {
         crisis.setCrisisDate(crisisDTO.getCrisisDate());
         crisis.setSeverity(crisisDTO.getSeverity());
 
-        // Associer l'utilisateur
         Subscriber subscriber = subscriberRepository.findById(crisisDTO.getIdUser())
-                .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouvé avec l'ID : " + crisisDTO.getIdUser()));
+                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + crisisDTO.getIdUser()));
         crisis.setSubscriber(subscriber);
 
-        // Géocodage via Nominatim
+        // Geocoding
         Double[] coords = nominatimService.getCoordinatesFromAddress(crisisDTO.getLocation());
         if (coords != null) {
             crisis.setLatitude(coords[0]);
             crisis.setLongitude(coords[1]);
         } else {
-            log.warn("Impossible de géocoder l'adresse : " + crisisDTO.getLocation());
+            log.warn("Failed to geocode address: " + crisisDTO.getLocation());
         }
 
-        // Gestion de l'image
+        // Image handling
         MultipartFile imageFile = crisisDTO.getImage();
         if (imageFile != null && !imageFile.isEmpty()) {
             try {
                 String base64Image = imageStorageService.encodeImageToBase64(imageFile);
                 crisis.setImage(base64Image);
             } catch (Exception e) {
-                log.error("Erreur lors de la conversion de l'image en Base64", e);
+                log.error("Error converting image to Base64", e);
                 crisis.setImage(null);
             }
         }
 
         Crisis savedCrisis = crisisRepository.save(crisis);
-        assignCrisisToAssociation(crisis.getIdCrisis());  // Directly calling the method
-        List<String> saturatedZones = getSaturationZones(3);  // Seuil de 3 crises
-
+        assignCrisisToAssociation(crisis.getIdCrisis());
         analyzeAndNotifyUsersByCity();
-
-        // ✅ Envoi de SMS si besoin
         handleNewCrisis(savedCrisis);
 
         return savedCrisis;
@@ -102,7 +91,6 @@ public class CrisisServices implements ICrisisServices {
                     existingCrisis.setCrisisDate(updatedCrisis.getCrisisDate());
                     existingCrisis.setSeverity(updatedCrisis.getSeverity());
 
-                    // Mise à jour lat/lng si adresse changée
                     Double[] coords = nominatimService.getCoordinatesFromAddress(updatedCrisis.getLocation());
                     if (coords != null) {
                         existingCrisis.setLatitude(coords[0]);
@@ -127,8 +115,8 @@ public class CrisisServices implements ICrisisServices {
     }
 
     @Override
-    public List<Crisis> getAllCrises() {
-        return crisisRepository.findAll();
+    public Page<Crisis> getAllCrises(Pageable pageable) {
+        return crisisRepository.findAll(pageable);
     }
 
     @Override
@@ -157,10 +145,10 @@ public class CrisisServices implements ICrisisServices {
     @Override
     public Crisis addCrisisWithImage(CrisisDTO crisisDTO, MultipartFile file) {
         crisisDTO.setImage(file);
-        return addCrisis(crisisDTO); // ✅ Reuse your existing logic
+        return addCrisis(crisisDTO);
     }
 
-    @Scheduled(cron = "0 0 * * * *") // toutes les heures
+    @Scheduled(cron = "0 0 * * * *") // Every hour
     public void autoExpireOldPendingCrises() {
         Date twentyFourHoursAgo = Date.from(Instant.now().minusSeconds(24 * 3600));
 
@@ -170,11 +158,11 @@ public class CrisisServices implements ICrisisServices {
                 .toList();
 
         for (Crisis crisis : oldPendingCrises) {
-            crisis.setStatus(CrisisStatus.EXPIRED); // statut métier à définir dans l'enum si besoin
+            crisis.setStatus(CrisisStatus.EXPIRED);
             crisisRepository.save(crisis);
         }
 
-        log.info("Crises expirées automatiquement : " + oldPendingCrises.size());
+        log.info("Auto-expired crises: " + oldPendingCrises.size());
     }
 
     public void handleNewCrisis(Crisis crisis) {
@@ -184,10 +172,9 @@ public class CrisisServices implements ICrisisServices {
             for (User user : targetUsers) {
                 try {
                     smsService.sendSms(user.getTelephone(),
-                            "🚨 Attention, une crise HIGH de categorie " + crisis.getCategorie() + " a été signalée à " + crisis.getLocation() + ". Restez vigilant !");
+                            "🚨 ALERT: " + crisis.getCategorie() + " crisis at " + crisis.getLocation() + ". Stay vigilant!");
                 } catch (Exception e) {
-                    log.error("Erreur lors de l'envoi du SMS à l'utilisateur avec le téléphone : " + user.getTelephone(), e);
-                    // Continue sending to others even if one fails
+                    log.error("Error sending SMS to user: " + user.getTelephone(), e);
                 }
             }
         }
@@ -197,98 +184,51 @@ public class CrisisServices implements ICrisisServices {
     public void analyzeAndNotifyUsersByCity() {
         LocalDate today = LocalDate.now();
 
-        // 1. Récupérer les crises d’aujourd’hui
         List<Crisis> todayCrises = crisisRepository.findAll().stream()
-                .filter(crisis -> {
-                    if (crisis.getCrisisDate() == null) return false;
-                    return crisis.getCrisisDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate().isEqual(today);
-                })
+                .filter(crisis -> crisis.getCrisisDate() != null &&
+                        crisis.getCrisisDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate().isEqual(today))
                 .toList();
 
-        // 2. Grouper les crises par localisation
         Map<String, List<Crisis>> crisesByLocation = todayCrises.stream()
                 .collect(Collectors.groupingBy(Crisis::getLocation));
 
-        // 3. Vérifier chaque localisation
         for (Map.Entry<String, List<Crisis>> entry : crisesByLocation.entrySet()) {
-            String location = entry.getKey();
-            List<Crisis> locationCrises = entry.getValue();
-
-            // Si 3 crises sont signalées dans la même localisation aujourd'hui
-            if (locationCrises.size() >= 3) {
-                // 4. Récupérer les utilisateurs dans cette localisation
-                List<User> users = userRepository.findByLocation(location);
+            if (entry.getValue().size() >= 3) {
+                List<User> users = userRepository.findByLocation(entry.getKey());
 
                 for (User user : users) {
-                    String subject = "🚨 Alerte Crise : " + location + " - Plusieurs événements signalés";
-                    String body = "<html>"
-                            + "<body style=\"font-family: Arial, sans-serif; color: #333;\">"
-                            + "<h2 style=\"color: #D32F2F;\">Alerte de Crises à " + location + "</h2>"
-                            + "<p>Bonjour <strong>" + user.getLastName() + "</strong>,</p>"
-                            + "<p>Nous souhaitons vous informer qu'un nombre important de crises a été signalé aujourd'hui à <strong>" + location + "</strong>.</p>"
-                            + "<p>En effet, <strong>" + locationCrises.size() + " crise(s)</strong> ont été signalées, indiquant une situation d'urgence à cette localisation.</p>"
-                            + "<p style=\"font-size: 14px; color: #555;\">Nous vous encourageons à rester vigilant(e) et à suivre les recommandations locales pour assurer votre sécurité.</p>"
-                            + "<p style=\"color: #555;\"><em>Restez informé(e), restez en sécurité.</em></p>"
-                            + "<p>Bien à vous,</p>"
-                            + "<p><strong>L'équipe de gestion des crises</strong></p>"
-                            + "</body>"
-                            + "</html>";
+                    String subject = "🚨 Crisis Alert: " + entry.getKey();
+                    String body = buildEmailBody(user, entry.getKey(), entry.getValue().size());
 
                     try {
-                        // Envoi de l'email
                         emailService.sendEmail(user.getEmail(), subject, body);
-                        log.info("Email envoyé à : " + user.getEmail() + " pour la localisation : " + location);
+                        log.info("Alert email sent to: " + user.getEmail());
                     } catch (Exception e) {
-                        log.error("Erreur lors de l'envoi de l'email à " + user.getEmail(), e);
+                        log.error("Error sending email to " + user.getEmail(), e);
                     }
                 }
             }
         }
     }
 
-
-
+    @Override
     public CrisisAssignmentResponse assignCrisisToAssociation(Long crisisId) {
-        if (crisisId == null) {
-            throw new IllegalArgumentException("Crisis ID cannot be null");
-        }
-
         Crisis crisis = crisisRepository.findById(crisisId)
-                .orElseThrow(() -> new EntityNotFoundException("Crisis not found with ID: " + crisisId));
+                .orElseThrow(() -> new RuntimeException("Crisis not found"));
 
-        String crisisLocation = crisis.getLocation();
-        if (crisisLocation == null || crisisLocation.isBlank()) {
-            throw new IllegalArgumentException("Crisis location is null or empty");
-        }
-
-        // Géocodage de la crise
-        Double[] crisisCoords = nominatimService.getCoordinatesFromAddress(crisisLocation);
+        // Get crisis coordinates
+        Double[] crisisCoords = nominatimService.getCoordinatesFromAddress(crisis.getLocation());
         if (crisisCoords == null) {
-            throw new IllegalArgumentException("Unable to geocode crisis location: " + crisisLocation);
+            throw new RuntimeException("Could not determine coordinates for crisis location");
         }
 
+        // Find all approved associations
         List<Association> approvedAssociations = associationRepository.findAll().stream()
                 .filter(a -> a.getStatus() == Association.AssociationStatus.APPROVED)
-                .filter(a -> a.getAssociationAddress() != null && !a.getAssociationAddress().isBlank())
                 .collect(Collectors.toList());
 
-        // 1. Vérifier s'il existe une association exactement dans la même localisation
-        Optional<Association> sameLocationAssociation = approvedAssociations.stream()
-                .filter(a -> crisisLocation.equalsIgnoreCase(a.getAssociationAddress()))
-                .findFirst();
-
-        if (sameLocationAssociation.isPresent()) {
-            crisis.setAssociation(sameLocationAssociation.get());
-            crisisRepository.save(crisis);
-            log.info("Crisis assignée à une association avec la même localisation : " + sameLocationAssociation.get().getAssociationName());
-            return new CrisisAssignmentResponse(
-                    "Crisis assigned to an association with the exact same location.",
-                    sameLocationAssociation.get().getAssociationAddress()
-            );
-        }
-
-        // 2. Sinon, chercher la plus proche association géographiquement
-        Association closestAssociation = null;
+        // Find the nearest association
+        Association nearestAssociation = null;
         double minDistance = Double.MAX_VALUE;
 
         for (Association association : approvedAssociations) {
@@ -297,38 +237,158 @@ public class CrisisServices implements ICrisisServices {
                 double distance = haversine(crisisCoords[0], crisisCoords[1], assocCoords[0], assocCoords[1]);
                 if (distance < minDistance) {
                     minDistance = distance;
-                    closestAssociation = association;
+                    nearestAssociation = association;
                 }
             }
         }
 
-        if (closestAssociation != null) {
-            crisis.setAssociation(closestAssociation);
-            crisisRepository.save(crisis);
-            log.info("Crisis assignée à l'association la plus proche : " + closestAssociation.getAssociationName() + " (distance : " + minDistance + " km)");
-            return new CrisisAssignmentResponse(
-                    "Crisis successfully assigned to the nearest approved association.",
-                    closestAssociation.getAssociationAddress()
-            );
-        } else {
-            log.warn("Aucune association trouvée pour assigner la crise.");
-            return new CrisisAssignmentResponse(
-                    "No suitable association found to assign the crisis.",
-                    null
-            );
+        if (nearestAssociation == null) {
+            throw new RuntimeException("No available association found");
         }
+
+        crisis.setAssociation(nearestAssociation);
+        crisisRepository.save(crisis);
+
+        // Email to the assigned association
+        Subscriber subscriber = nearestAssociation.getSubscriber();
+        if (subscriber != null && subscriber.getEmail() != null) {
+            String subject = "[Action Requise] Nouvelle crise assignée à votre organisation";
+            String body = "<html>"
+                    + "<body style=\"font-family: 'Segoe UI', Arial, sans-serif; color: #333333; line-height: 1.5;\">"
+                    + "<div style=\"max-width: 600px; margin: 0 auto; padding: 20px;\">"
+                    + "<h2 style=\"color: #C00000; font-size: 20px; border-bottom: 1px solid #eaeaea; padding-bottom: 10px;\">Nouvelle crise assignée</h2>"
+                    + "<p>Bonjour <strong>" + subscriber.getFirstName() + "</strong>,</p>"
+                    + "<p>Une nouvelle crise nécessitant votre intervention vient d'être assignée à votre organisation.</p>"
+                    + "<div style=\"background-color: #F8F9FA; padding: 15px; border-left: 4px solid #C00000; margin: 15px 0;\">"
+                    + "<p style=\"margin: 0 0 10px 0;\"><strong>Détails de la crise :</strong></p>"
+                    + "<table style=\"width: 100%; border-collapse: collapse;\">"
+                    + "<tr><td style=\"padding: 5px 0; width: 120px; font-weight: 600;\">Localisation :</td><td style=\"padding: 5px 0;\">" + crisis.getLocation() + "</td></tr>"
+                    + "<tr><td style=\"padding: 5px 0; vertical-align: top; font-weight: 600;\">Description :</td><td style=\"padding: 5px 0;\">" + crisis.getDescription() + "</td></tr>"
+                    + "</table>"
+                    + "</div>"
+                    + "<p style=\"font-weight: 600;\">Actions requises :</p>"
+                    + "<ul style=\"margin-top: 5px; padding-left: 20px;\">"
+                    + "<li>Veuillez confirmer la réception de cette alerte</li>"
+                    + "<li>Évaluez l'urgence de la situation</li>"
+                    + "<li>Mettez en œuvre votre protocole d'intervention</li>"
+                    + "</ul>"
+                    + "<p style=\"font-size: 13px; color: #707070; font-style: italic; margin-top: 20px;\">"
+                    + "Ce message a été généré automatiquement. Pour toute question, veuillez utiliser le système de gestion des crises."
+                    + "</p>"
+                    + "<p>Cordialement,</p>"
+                    + "<p style=\"font-weight: 600;\">Le Centre de Commandement des Crises</p>"
+                    + "</div>"
+                    + "</body>"
+                    + "</html>";
+            emailService.sendEmail(subscriber.getEmail(), subject, body);
+            log.info("Tentative d'envoi d'un email de crise à : " + subscriber.getEmail());
+        }
+
+        // Email to the user who reported the crisis
+        Subscriber declarant = crisis.getSubscriber();
+        if (declarant != null && declarant.getEmail() != null) {
+            String subject = "Votre signalement - Une association a pris en charge votre crise";
+            String body = "<html>"
+                    + "<body style=\"font-family: 'Segoe UI', Arial, sans-serif; color: #333333; line-height: 1.5;\">"
+                    + "<div style=\"max-width: 600px; margin: 0 auto; padding: 20px;\">"
+                    + "<h2 style=\"color: #2E7D32; font-size: 20px; border-bottom: 1px solid #eaeaea; padding-bottom: 10px;\">Prise en charge de votre signalement</h2>"
+                    + "<p>Bonjour <strong>" + declarant.getFirstName() + "</strong>,</p>"
+                    + "<p>Nous vous remercions d'avoir signalé cette crise sur notre plateforme. Votre vigilance contribue à une meilleure gestion des situations d'urgence.</p>"
+
+                    + "<div style=\"background-color: #E8F5E9; padding: 15px; border-left: 4px solid #2E7D32; margin: 15px 0;\">"
+                    + "<p style=\"margin: 0 0 10px 0; font-weight: 600;\">Détails de la prise en charge :</p>"
+                    + "<table style=\"width: 100%; border-collapse: collapse;\">"
+                    + "<tr><td style=\"padding: 5px 0; width: 120px; font-weight: 600;\">Association :</td><td style=\"padding: 5px 0;\">" + nearestAssociation.getAssociationName() + "</td></tr>"
+                    + "<tr><td style=\"padding: 5px 0; font-weight: 600;\">Localisation :</td><td style=\"padding: 5px 0;\">" + crisis.getLocation() + "</td></tr>"
+                    + "<tr><td style=\"padding: 5px 0; vertical-align: top; font-weight: 600;\">Description :</td><td style=\"padding: 5px 0;\">" + crisis.getDescription() + "</td></tr>"
+                    + "</table>"
+                    + "</div>"
+
+                    + "<p>L'association assignée prendra contact avec vous si nécessaire. Vous pouvez suivre l'évolution de la situation depuis votre espace personnel.</p>"
+
+                    + "<div style=\"margin-top: 20px; padding: 15px; background-color: #F5F5F5; border-radius: 4px;\">"
+                    + "<p style=\"margin: 0; font-size: 14px;\">Vous souhaitez modifier ou compléter votre signalement ? <a href=\"[LIEN_VERS_PLATEFORME]\" style=\"color: #1565C0;\">Accédez à votre espace</a></p>"
+                    + "</div>"
+
+                    + "<p style=\"font-size: 13px; color: #707070; font-style: italic; margin-top: 20px;\">"
+                    + "Ce message est envoyé automatiquement, merci de ne pas y répondre directement."
+                    + "</p>"
+
+                    + "<p>Cordialement,</p>"
+                    + "<p style=\"font-weight: 600;\">L'équipe SoliRef</p>"
+                    + "<p style=\"font-size: 12px; color: #707070;\">Ensemble pour une réponse solidaire aux crises</p>"
+                    + "</div>"
+                    + "</body>"
+                    + "</html>";
+            emailService.sendEmail(declarant.getEmail(), subject, body);
+        }
+
+        return new CrisisAssignmentResponse(
+                crisisId,
+                nearestAssociation.getIdAssociation(),
+                "Assigned to nearest association (" + String.format("%.2f", minDistance) + " km away)"
+        );
     }
 
+    private String buildEmailBody(User user, String location, int crisisCount) {
+        return "<!DOCTYPE html>" +
+                "<html>" +
+                "<head>" +
+                "    <meta charset=\"UTF-8\">" +
+                "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">" +
+                "</head>" +
+                "<body style=\"font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; color: #333333; line-height: 1.6;\">" +
+                "    <div style=\"max-width: 600px; margin: 0 auto; padding: 20px;\">" +
+                "        <!-- Header -->" +
+                "        <div style=\"background-color: #D32F2F; padding: 20px; text-align: center; border-radius: 4px 4px 0 0;\">" +
+                "            <h1 style=\"color: #ffffff; margin: 0; font-size: 24px;\">CRISIS ALERT NOTIFICATION</h1>" +
+                "        </div>" +
+                "        " +
+                "        <!-- Content -->" +
+                "        <div style=\"background-color: #ffffff; padding: 30px; border: 1px solid #e0e0e0; border-top: none;\">" +
+                "            <p style=\"margin-top: 0;\">Dear " + user.getLastName() + ",</p>" +
+                "            " +
+                "            <div style=\"background-color: #FFF5F5; border-left: 4px solid #D32F2F; padding: 15px; margin: 20px 0;\">" +
+                "                <p style=\"margin: 0; font-weight: 600; color: #D32F2F;\">" +
+                "                    <strong>" + crisisCount + " emergency situations</strong> have been reported today in <strong>" + location + "</strong>." +
+                "                </p>" +
+                "            </div>" +
+                "            " +
+                "            <p>Our monitoring systems have detected increased activity in your area. Please:</p>" +
+                "            " +
+                "            <ul style=\"margin: 20px 0; padding-left: 20px;\">" +
+                "                <li style=\"margin-bottom: 10px;\">Remain vigilant and monitor official channels</li>" +
+                "                <li style=\"margin-bottom: 10px;\">Follow local safety instructions</li>" +
+                "                <li style=\"margin-bottom: 10px;\">Avoid unnecessary travel to affected areas</li>" +
+                "            </ul>" +
+                "            " +
+                "            <p>We will continue to monitor the situation and provide updates as needed.</p>" +
+                "        </div>" +
+                "        " +
+                "        <!-- Footer -->" +
+                "        <div style=\"background-color: #f5f5f5; padding: 20px; text-align: center; border-radius: 0 0 4px 4px; font-size: 13px; color: #666666;\">" +
+                "            <p style=\"margin: 0 0 10px 0;\">For assistance, contact our 24/7 support team:</p>" +
+                "            <p style=\"margin: 0;\">" +
+                "                <a href=\"mailto:support@crisismanagement.org\" style=\"color: #D32F2F; text-decoration: none;\">support@crisismanagement.org</a> | " +
+                "                <a href=\"tel:+1234567890\" style=\"color: #D32F2F; text-decoration: none;\">+1 (234) 567-890</a>" +
+                "            </p>" +
+                "            <p style=\"margin: 15px 0 0 0; border-top: 1px solid #e0e0e0; padding-top: 15px;\">" +
+                "                © " + LocalDate.now().getYear() + " Crisis Management System. All rights reserved." +
+                "            </p>" +
+                "        </div>" +
+                "    </div>" +
+                "</body>" +
+                "</html>";
+    }
 
-    // Méthode Haversine pour calculer la distance entre deux points GPS
     private double haversine(double lat1, double lon1, double lat2, double lon2) {
-        final int R = 6371; // Rayon de la Terre en km
+        final int R = 6371;
         double dLat = Math.toRadians(lat2 - lat1);
         double dLon = Math.toRadians(lon2 - lon1);
-        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        double a = Math.sin(dLat/2) * Math.sin(dLat/2) +
                 Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
-                        Math.sin(dLon / 2) * Math.sin(dLon / 2);
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                        Math.sin(dLon/2) * Math.sin(dLon/2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         return R * c;
     }
 
@@ -348,7 +408,4 @@ public class CrisisServices implements ICrisisServices {
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
     }
-
-
-
 }
