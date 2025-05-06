@@ -14,6 +14,7 @@ import tn.esprit.examen.nomPrenomClasseExamen.Repositories.UserRepository;
 import tn.esprit.examen.nomPrenomClasseExamen.dto.CrisisAssignmentResponse;
 import tn.esprit.examen.nomPrenomClasseExamen.dto.CrisisDTO;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.*;
+import tn.esprit.examen.nomPrenomClasseExamen.services.CrisisServices;
 import tn.esprit.examen.nomPrenomClasseExamen.services.ICrisisServices;
 import tn.esprit.examen.nomPrenomClasseExamen.services.SmsService;
 
@@ -33,6 +34,8 @@ public class CrisisController {
     private final ICrisisServices crisisService;
     private final SubscriberRepository subscriberRepository;
     private final SmsService smsService;
+    private final CrisisServices crisisServices;
+
 
 
     // ✅ Nouvelle méthode unique pour ajouter une crise avec ou sans image
@@ -149,6 +152,12 @@ public class CrisisController {
     public ResponseEntity<CrisisAssignmentResponse> assignCrisisToAssociation(@PathVariable Long crisisId) {
         CrisisAssignmentResponse response = crisisService.assignCrisisToAssociation(crisisId);
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/saturated-zones")
+    public ResponseEntity<List<String>> getSaturatedZones(@RequestParam(defaultValue = "3") int threshold) {
+        List<String> saturatedZones = crisisServices.getSaturationZones(threshold);
+        return ResponseEntity.ok(saturatedZones);
     }
 
 
