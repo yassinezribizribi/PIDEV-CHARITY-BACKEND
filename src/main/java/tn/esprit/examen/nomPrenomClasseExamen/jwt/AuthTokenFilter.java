@@ -13,7 +13,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 import tn.esprit.examen.nomPrenomClasseExamen.services.SubscriberDetailsServiceImpl;
@@ -40,7 +39,6 @@ public class AuthTokenFilter extends OncePerRequestFilter {
         String method = request.getMethod();
         logger.info("📥 Intercepting {} {}", method, requestURI);
 
-        // ✅ Public routes (no authentication needed)
         if (isPublicRoute(requestURI, method)) {
             logger.info("🔓 Accès public autorisé : {} {}", method, requestURI);
             filterChain.doFilter(request, response);
@@ -49,16 +47,13 @@ public class AuthTokenFilter extends OncePerRequestFilter {
 
         try {
             String jwt = parseJwt(request);
-            System.err.println(request.getHeader("Authorization"));
-
-            // For WebSocket requests, check query parameter
             if (jwt == null && isWebSocketRequest(request)) {
                 jwt = request.getParameter("token");
             }
 
-            if (!jwtUtils.validateJwtToken(jwt)) {
-                logger.warn("⛔ Token JWT invalide");
-                sendUnauthorizedError(response, "Invalid token");
+            if (!StringUtils.hasText(jwt) || !jwtUtils.validateJwtToken(jwt)) {
+                logger.warn("⛔ Token JWT invalide ou manquant");
+                sendUnauthorizedError(response, "Invalid or missing token");
                 return;
             }
 
@@ -88,42 +83,49 @@ public class AuthTokenFilter extends OncePerRequestFilter {
 
         filterChain.doFilter(request, response);
     }
+
     private boolean isWebSocketRequest(HttpServletRequest request) {
         return request.getRequestURI().startsWith("/ws/");
-
     }
 
     private boolean isPublicRoute(String uri, String method) {
-        // Only allow POST to /api/associations (create new association) without auth
         return uri.startsWith("/api/auth/") ||
-                (uri.equals("/api/associations") && "POST".equalsIgnoreCase(method))||
-        (uri.startsWith( "/api/paiments/cagnotte") && "GET".equals(method))||
-                (uri.startsWith( "/api/donations/cagnotte") && "GET".equals(method)) ||
-                (uri.startsWith( "/api/paiments/spin/") && "GET".equals(method)) ||
-                (uri.startsWith( "/api/donations/sorted-active") && "GET".equals(method)) ||
-                (uri.startsWith( "/api/paiments/cagnotte/suggestions/") && "GET".equals(method)) ||
-                (uri.startsWith( "/api/dons/receipt/") && "GET".equals(method)) ||
-                (uri.startsWith( "/receipt/") && "GET".equals(method)) ||
+                uri.startsWith("/ws/") ||
+                uri.equals("/error") ||
+                (uri.equals("/api/healthcare/export") && "GET".equals(method)) ||
+                (uri.equals("/api/healthcare/report-url") && "GET".equals(method)) ||
+                (uri.startsWith("/report/") && "GET".equals(method)) ||
 
-                (uri.startsWith("/api/paiments/create-payment-intent") && "POST".equals(method)) ||
-                (uri.startsWith("/api/associations") && "POST".equals(method)) ||
-                (uri.startsWith("/api/dons/update-dons/nonauth/"
-                ) && "POST".equals(method)) ||
-                (uri.startsWith("/api/dons/get-dons/nonauth/") && "GET".equals(method)) ||
-                (uri.startsWith("/api/dons/update-dons/nonauth/") && "PUT".equals(method)) ||
+                // Testimonials
+                (uri.equals("/api/testimonials/all") && "GET".equals(method)) ||
+                (uri.startsWith("/api/testimonials/images/") && "GET".equals(method)) ||
+                (uri.startsWith("/api/testimonials/media/") && "GET".equals(method)) ||
+                (uri.startsWith("/api/testimonials/search/") && "GET".equals(method)) ||
 
-
+                // Donations
                 (uri.startsWith("/api/donations/getall") && "GET".equals(method)) ||
                 (uri.startsWith("/api/donations/get/") && "GET".equals(method)) ||
                 (uri.startsWith("/api/donations/find/") && "GET".equals(method)) ||
-                (uri.startsWith( "/api/dons/receipt/") && "POST".equals(method)) ||
-                (uri.startsWith( "/receipt/") && "POST".equals(method)) ||
-                (uri.startsWith("/api/dons/") && uri.endsWith("/contribute") && "POST".equals(method))
+                (uri.startsWith("/api/donations/cagnotte") && "GET".equals(method)) ||
+                (uri.startsWith("/api/donations/sorted-active") && "GET".equals(method)) ||
 
-        ;
+                // Dons
+                (uri.startsWith("/api/dons/get-dons/nonauth/") && "GET".equals(method)) ||
+                (uri.startsWith("/api/dons/update-dons/nonauth/") && ("POST".equals(method) || "PUT".equals(method))) ||
+                (uri.startsWith("/api/dons/receipt/") && ("GET".equals(method) || "POST".equals(method))) ||
+                (uri.startsWith("/receipt/") && ("GET".equals(method) || "POST".equals(method))) ||
+                (uri.startsWith("/api/dons/") && uri.endsWith("/contribute") && "POST".equals(method)) ||
+
+                // Paiements
+                (uri.startsWith("/api/paiments/create-payment-intent") && "POST".equals(method)) ||
+                (uri.startsWith("/api/paiments/cagnotte") && "GET".equals(method)) ||
+                (uri.startsWith("/api/paiments/cagnotte/suggestions/") && "GET".equals(method)) ||
+                (uri.startsWith("/api/paiments/spin/") && "GET".equals(method)) ||
+
+                // Associations
+                (uri.equals("/api/associations") && "POST".equalsIgnoreCase(method)) ||
+                (uri.startsWith("/api/associations") && "POST".equalsIgnoreCase(method));
     }
-
-
 
     private String parseJwt(HttpServletRequest request) {
         String headerAuth = request.getHeader("Authorization");

@@ -34,6 +34,7 @@ public class User implements Serializable{
     @JsonIgnore
     private List<Paiement> paiements;
     private String location;
+    private String profileImage;
 
 
 

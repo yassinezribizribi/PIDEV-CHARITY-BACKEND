@@ -42,16 +42,16 @@ public class Association implements Serializable {
     @JsonIgnore
     private Set<Mission> missions = new HashSet<>();
 
+    @OneToMany(mappedBy = "association", cascade = CascadeType.ALL, orphanRemoval = true)
 
 
-
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "association")
     private Set<Event> events = new HashSet<>();
 
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "association")
+    @OneToMany(mappedBy = "association", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private Set<Notification> notifications = new HashSet<>();
 
-    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE})
     @JoinTable(
             name = "association_partnerships",
             joinColumns = @JoinColumn(name = "association_id"),
