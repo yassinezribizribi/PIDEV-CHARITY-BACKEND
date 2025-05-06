@@ -81,6 +81,7 @@ public class CrisisServices implements ICrisisServices {
 
         Crisis savedCrisis = crisisRepository.save(crisis);
         assignCrisisToAssociation(crisis.getIdCrisis());  // Directly calling the method
+        List<String> saturatedZones = getSaturationZones(3);  // Seuil de 3 crises
 
         analyzeAndNotifyUsersByCity();
 
@@ -330,6 +331,24 @@ public class CrisisServices implements ICrisisServices {
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return R * c;
     }
+
+    public List<String> getSaturationZones(int seuil) {
+        LocalDate today = LocalDate.now();
+
+        List<Crisis> todayCrises = crisisRepository.findAll().stream()
+                .filter(crisis -> crisis.getCrisisDate() != null &&
+                        crisis.getCrisisDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate().isEqual(today))
+                .toList();
+
+        Map<String, Long> locationCounts = todayCrises.stream()
+                .collect(Collectors.groupingBy(Crisis::getLocation, Collectors.counting()));
+
+        return locationCounts.entrySet().stream()
+                .filter(entry -> entry.getValue() >= seuil)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
+    }
+
 
 
 }
