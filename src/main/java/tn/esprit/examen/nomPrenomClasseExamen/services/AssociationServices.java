@@ -16,6 +16,8 @@ import tn.esprit.examen.nomPrenomClasseExamen.dto.*;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.*;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Notification.NotificationType;
 import tn.esprit.examen.nomPrenomClasseExamen.jwt.JwtUtils;
+import tn.esprit.examen.nomPrenomClasseExamen.entities.Notification; // ✅ Correct
+
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -181,14 +183,12 @@ public class AssociationServices {
             );
         }
 
-        // Add location filter
         if (!location.isEmpty()) {
             spec = spec.and((root, query, cb) ->
                     cb.like(root.get("associationAddress"), "%" + location + "%")
             );
         }
 
-        // Add tier filter
         if (!tier.isEmpty()) {
             spec = spec.and((root, query, cb) ->
                     cb.equal(root.get("partnershipTier"), tier)
@@ -228,26 +228,51 @@ public class AssociationServices {
         );
     }
 
+    // ... existing code ...
+
     @Transactional
     public void deleteAssociation(Long id, String token) {
         Long userId = jwtUtils.getUserIdFromJwtToken(token);
-        Association association = getAuthenticatedAssociation(id, userId);
+        List<String> roles = jwtUtils.getRolesFromJwtToken(token);
 
-        sendAssociationDeletedNotification(association);
-        associationRepository.deleteById(id);
-    }
+        Association association = associationRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Association not found"));
 
-    private void sendAssociationDeletedNotification(Association association) {
-        notificationService.createAndSendNotification(
-                "🗑️ Your association has been deleted",
-                NotificationType.SYSTEM_ALERT,
-                "/associations",
-                association.getSubscriber(),
-                null,
-                null,
-                association
+        // Authorization check
+        if (!roles.contains("ROLE_ADMIN") &&
+                !isAssociationOwner(association, userId)) {
+            throw new UnauthorizedException("Not authorized to manage this association");
+        }
+
+        // Clear notifications first
+        association.getNotifications().clear();
+
+        // Clear partnerships to avoid circular references
+        new ArrayList<>(association.getPartners()).forEach(partner ->
+                partner.getPartners().remove(association)
         );
+        association.getPartners().clear();
+
+        // Clear other relationships
+        association.getMissions().clear();
+        association.getEvents().clear();
+        association.getSubscriptions().clear();
+
+        // Save the association with cleared relationships
+        associationRepository.save(association);
+
+        // Now delete the association
+        associationRepository.delete(association);
+        associationRepository.flush();
     }
+
+
+    private boolean isAssociationOwner(Association association, Long userId) {
+        return association.getSubscriber() != null
+                && association.getSubscriber().getIdUser().equals(userId);
+    }
+
+
 
     // ============== ENHANCED PARTNERSHIP SYSTEM ==============
 

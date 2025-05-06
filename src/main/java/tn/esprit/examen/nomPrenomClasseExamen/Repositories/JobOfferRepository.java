@@ -13,4 +13,5 @@ public interface JobOfferRepository extends JpaRepository<JobOffer, Long> {
     List<JobOffer> findByCreatedBy_IdUser(Long userId);
 
 
+
 }

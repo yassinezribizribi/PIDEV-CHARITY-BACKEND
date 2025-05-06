@@ -3,7 +3,10 @@ import jakarta.validation.Valid;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -11,6 +14,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import tn.esprit.examen.nomPrenomClasseExamen.Repositories.SubscriberRepository;
 import tn.esprit.examen.nomPrenomClasseExamen.dto.JwtResponseDto;
 import tn.esprit.examen.nomPrenomClasseExamen.dto.LoginRequest;
@@ -25,7 +29,12 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.validation.annotation.Validated;
 
 
+import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -229,5 +238,109 @@ public class AuthController {
         // emailService.sendEmail(subscriber.getEmail(), subject, body);
 
         return ResponseEntity.ok(subscriberOpt.get());
-    }}
+    }
+
+
+    // 🔹 GET ALL USERS
+    @GetMapping("/users")
+    public ResponseEntity<?> getAllUsers() {
+        log.info("🔍 Fetching all users");
+
+        try {
+            List<Subscriber> users = subscriberRepository.findAll();
+            log.info("✅ Successfully retrieved {} users", users.size());
+            return ResponseEntity.ok(users);
+        } catch (Exception e) {
+            log.error("❌ Error fetching users: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new MessageResponseDto("Error fetching users: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/upload-profile-image")
+    public ResponseEntity<?> uploadProfileImage(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("userId") Long userId) {
+        try {
+            // Validate file
+            if (file.isEmpty()) {
+                return ResponseEntity.badRequest().body("Please select a file to upload");
+            }
+
+            // Validate file type
+            String contentType = file.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                return ResponseEntity.badRequest().body("Only image files are allowed");
+            }
+
+            // Validate file size (2MB max)
+            if (file.getSize() > 2 * 1024 * 1024) {
+                return ResponseEntity.badRequest().body("File size should not exceed 2MB");
+            }
+
+            // Get user
+            Subscriber subscriber = subscriberRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            // Generate unique filename
+            String originalFilename = file.getOriginalFilename();
+            String extension = originalFilename != null ?
+                    originalFilename.substring(originalFilename.lastIndexOf(".")) : ".jpg";
+            String filename = "profile_" + userId + "_" + System.currentTimeMillis() + extension;
+
+            // Create uploads directory if it doesn't exist
+            // Use absolute path and create directories recursively
+            String uploadDir = System.getProperty("user.dir") + File.separator + "uploads" + File.separator + "profile-images";
+            File dir = new File(uploadDir);
+            if (!dir.exists()) {
+                boolean created = dir.mkdirs();
+                if (!created) {
+                    throw new RuntimeException("Failed to create upload directory");
+                }
+            }
+
+            // Save file
+            String filePath = uploadDir + File.separator + filename;
+            File dest = new File(filePath);
+            file.transferTo(dest);
+
+            // Update user's profile image path - use relative path for storage
+            String relativePath = "/uploads/profile-images/" + filename;
+            subscriber.setProfileImage(relativePath);
+            subscriberRepository.save(subscriber);
+
+            // Return the new profile image URL
+            Map<String, String> response = new HashMap<>();
+            response.put("profileImage", relativePath);
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("Error uploading profile image: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to upload profile image: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/profile-image/{filename:.+}")
+    public ResponseEntity<Resource> getProfileImage(@PathVariable String filename) {
+        try {
+            String uploadDir = System.getProperty("user.dir") + File.separator + "uploads" + File.separator + "profile-images";
+            Path filePath = Paths.get(uploadDir, filename);
+            Resource resource = new FileSystemResource(filePath.toFile());
+
+            if (resource.exists() && resource.isReadable()) {
+                return ResponseEntity.ok()
+                        .contentType(MediaType.IMAGE_JPEG) // or MediaType.IMAGE_PNG
+                        .body(resource);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+}
+
 

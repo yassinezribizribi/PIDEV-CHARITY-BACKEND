@@ -3,6 +3,8 @@ package tn.esprit.examen.nomPrenomClasseExamen.dto;
 import com.fasterxml.jackson.annotation.*;
 import lombok.*;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.*;
+import tn.esprit.examen.nomPrenomClasseExamen.entities.Notification;
+
 
 import java.util.HashSet;
 import java.util.Set;
@@ -30,6 +32,7 @@ public class AssociationDto {
     private Association.PartnershipTier partnershipTier = Association.PartnershipTier.BRONZE; // Default
     private Integer progressToNextTier;
     private Double similarityScore;  // For recommendations only
+    private Set<Notification> notifications;
 
     @JsonIgnore
     private Subscriber subscriber;
@@ -44,7 +47,7 @@ public class AssociationDto {
     private Set<Event> events;
 
     @JsonIgnore
-    private Set<Notification> notifications;
+    private Set<Notification> notification;
 
     @JsonIdentityInfo(
             generator = ObjectIdGenerators.PropertyGenerator.class,

@@ -192,7 +192,8 @@ public class AssociationController {
         }
 
         try {
-            associationServices.deleteAssociation(id, token);
+            String cleanJwt = token.substring(7);
+            associationServices.deleteAssociation(id, cleanJwt);
             return ResponseEntity.noContent().build();
         } catch (AssociationServices.UnauthorizedException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
@@ -446,4 +447,3 @@ public class AssociationController {
         void accept(String path);
     }
 }
-

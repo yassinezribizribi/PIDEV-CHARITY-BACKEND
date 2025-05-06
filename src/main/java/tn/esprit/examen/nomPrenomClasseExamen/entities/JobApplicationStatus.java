@@ -5,5 +5,6 @@ public enum JobApplicationStatus {
     UNDER_REVIEW,  // Added this status
     INTERVIEW,     // Added this status
     ACCEPTED,
+
     REJECTED,
 }
