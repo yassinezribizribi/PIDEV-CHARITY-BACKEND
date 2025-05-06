@@ -1,5 +1,7 @@
 package tn.esprit.examen.nomPrenomClasseExamen.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.*;
 import lombok.*;
 import java.io.Serializable;
@@ -36,16 +38,20 @@ public class Association implements Serializable {
     @ManyToMany(cascade = CascadeType.ALL)
     private Set<Subscription> subscriptions = new HashSet<>();
 
-    @ManyToMany(cascade = CascadeType.ALL)
+    @ManyToMany(mappedBy = "associations")
+    @JsonIgnore
     private Set<Mission> missions = new HashSet<>();
 
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "association")
+    @OneToMany(mappedBy = "association", cascade = CascadeType.ALL, orphanRemoval = true)
+
+
     private Set<Event> events = new HashSet<>();
 
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "association")
+    @OneToMany(mappedBy = "association", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private Set<Notification> notifications = new HashSet<>();
 
-    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE})
     @JoinTable(
             name = "association_partnerships",
             joinColumns = @JoinColumn(name = "association_id"),

@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Role;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.Subscriber;
+import tn.esprit.examen.nomPrenomClasseExamen.entities.VolunteerStatus;
 
 import java.util.List;
 import java.util.Optional;
@@ -26,6 +27,11 @@ public interface SubscriberRepository extends JpaRepository<Subscriber, Long> {
     @Query("SELECT s FROM Subscriber s WHERE s.idUser != :idUser")
     List<Subscriber> findAllExceptUser(@Param("idUser")  Long idUser);
 
+    Optional<Subscriber> findById(Long id); // Assuming field is named `id`
 
-    Optional<Subscriber> findByIdUser(Long idUser);}
+    Optional<Subscriber> findByIdUser(Long idUser);
+    List<Subscriber> findByValidationStatusAndRole(VolunteerStatus status, Role role);
+
+}
+
 

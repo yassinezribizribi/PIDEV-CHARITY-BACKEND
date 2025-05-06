@@ -9,14 +9,13 @@ import java.util.Optional;
 
 public interface IHealthcareServices {
     Healthcare addHealthcare(HealthcareDTO healthcareDTO);
-
     Healthcare updateHealthcare(Long id, HealthcareDTO healthcareDTO);
-
     void deleteHealthcare(Long id);
-
     Optional<Healthcare> getHealthcareById(Long id);
-
     List<HealthcareDTO> getAllHealthcare();
-
     Healthcare updateHealthcareStatus(Long healthcareId, String status, Date bookingDate);
+
+    // ✅ Ajouter ces deux méthodes pour corriger l'erreur
+    Healthcare proposeAppointment(Long healthcareId, Date proposedDate);
+    Healthcare confirmAppointment(Long healthcareId);
 }

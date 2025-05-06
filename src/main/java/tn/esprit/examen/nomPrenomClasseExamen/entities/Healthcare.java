@@ -26,6 +26,8 @@ public class Healthcare implements Serializable {
     private String terminalDisease;
     @Column(name = "meeting_url")
     private String meetingUrl;
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date proposedBookingDate; // champ pour la date proposée par le patient
 
 
     @Temporal(TemporalType.TIMESTAMP)

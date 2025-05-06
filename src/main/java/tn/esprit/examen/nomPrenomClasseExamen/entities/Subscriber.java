@@ -18,46 +18,81 @@ import java.util.Set;
 public class Subscriber extends User {
 
     @Enumerated(EnumType.STRING)
-    private Role role;
+    Role role;
 
     @Column(nullable = true)
-    private String skills;
+    String skills;
+
     @Column(nullable = true)
-    private String nationality;
+    String nationality;
+
     @Column(nullable = true)
-    private String expertiseArea;
+    String expertiseArea;
+
     @Column(nullable = true)
-    private String associationRole;
+    String associationRole;
+
+    // ✅ Pour le domaine médical
+    String symptoms;
+
+    // ✅ CV upload
+    String cvFilePath;
+
+    @Column(length = 500)
+    String rejectionReason;
+
+    @Enumerated(EnumType.STRING)
+    VolunteerStatus validationStatus = VolunteerStatus.NOT_VALIDATED;
+
+    @Column(nullable = false)
+    boolean healthcareRequest = false;
+
+    // ✅ Relations
+
+    @OneToMany(mappedBy = "subscriber", cascade = CascadeType.ALL)
+    @JsonIgnore
+    List<Healthcare> healthcareRequests;
+
+    @OneToMany(mappedBy = "doctor", cascade = CascadeType.ALL)
+    @JsonIgnore
+    List<Healthcare> treatedPatients;
 
     @ManyToOne
-    private Healthcare healthcare;
+    Healthcare healthcare;
 
-    @OneToOne(mappedBy = "subscriber", cascade = CascadeType.ALL)
-    @JsonBackReference
-    private Association association;
+    @OneToMany(mappedBy = "subscriber", cascade = CascadeType.ALL)
+    @JsonIgnore
+    List<Notification> notifications;
 
     @OneToMany(cascade = CascadeType.ALL)
     @JsonIgnore
-    private Set<Animal> animals;
+    Set<Animal> animals;
 
-//    @ManyToMany(mappedBy="subscribers", cascade = CascadeType.ALL)
-//    @JsonIgnore
-
-//    private Set<Donation> donations;
-
-    @ManyToMany(mappedBy="subscribers", cascade = CascadeType.ALL)
+    @ManyToMany(mappedBy = "subscribers", cascade = CascadeType.ALL)
     @JsonIgnore
-    private Set<Training> trainings;
+    Set<Donation> donations;
 
-    @ManyToMany(mappedBy = "subscribers")
+    @ManyToMany(mappedBy = "subscribers", cascade = CascadeType.ALL)
     @JsonIgnore
-    private Set<Forum> forums;
+    Set<Training> trainings;
+
+    @ManyToMany(mappedBy = "subscribers", cascade = CascadeType.ALL)
+    @JsonIgnore
+    Set<Forum> forums;
+
+    @OneToMany(mappedBy = "subscriber", cascade = CascadeType.ALL)
+    @JsonIgnore
+    List<Crisis> crises;
 
     @OneToMany(mappedBy = "createdBy", cascade = CascadeType.ALL)
     @JsonIgnore
-    private Set<JobOffer> jobOffers;
+    Set<JobOffer> jobOffers;
 
-    @OneToMany(mappedBy = "subscriber")
+    @OneToMany(mappedBy = "subscriber", cascade = CascadeType.ALL)
     @JsonIgnore
-    private List<Crisis> crises;
+    Set<Participation> participations;
+
+    @OneToOne(mappedBy = "subscriber", cascade = CascadeType.ALL)
+    @JsonBackReference
+    Association association;
 }

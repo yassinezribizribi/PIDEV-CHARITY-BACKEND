@@ -319,5 +319,3 @@ public class JobApplicationServices {
                 .collect(Collectors.toList());
     }
 }
-
-

@@ -1,9 +1,12 @@
 package tn.esprit.examen.nomPrenomClasseExamen.dto;
 
+import jakarta.validation.constraints.*;
 import lombok.*;
 import tn.esprit.examen.nomPrenomClasseExamen.entities.*;
+
 import java.io.Serializable;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.util.Date;
 
 @Data
 @NoArgsConstructor
@@ -11,19 +14,44 @@ import java.time.LocalDateTime;
 public class DonationDto implements Serializable {
 
     private Long idDonation;
+
+    @NotBlank(message = "Title is required")
+    @Size(min = 3, max = 100, message = "Title must be between 3 and 100 characters")
     private String titre;
+
+    @NotBlank(message = "Description is required")
+    @Size(min = 10, max = 1000, message = "Description must be between 10 and 1000 characters")
     private String description;
+
+    @Min(value = 1, message = "Requested quantity must be at least 1")
     private int quantiteDemandee;
+
+    @Min(value = 0, message = "Donated quantity cannot be negative")
     private int quantiteDonnee;
-    private Boolean availability;
-    private LocalDateTime lastUpdated;
+
+    @NotNull(message = "Donation type is required")
     private DonationType donationType;
+
+    @Min(value = 0, message = "Excess quantity cannot be negative")
     private int quantiteExcedentaire;
 
-    private Long cagnotteId; // Only include the ID of the cagnotte
-    private Long associationId; // Only include the ID of the association
+    @Size(max = 255, message = "Image URL is too long")
+    private String imageUrl;
 
-    // 🔹 Convert DTO to Entity
+    private LocalDate startDate;
+
+    @FutureOrPresent(message = "End date must be today or in the future")
+    private Date endDate;
+
+    private CagnotteEnligne cagnotteenligne;
+
+    @NotNull(message = "Donation status is required")
+    private DonationStatus status;
+
+    @Min(value = 1, message = "Priority must be at least 1")
+    @Max(value = 4, message = "Priority must not be greater than 4")
+    private int priority;
+    // DTO -> Entity
     public Donation toDonation() {
         Donation donation = new Donation();
         donation.setIdDonation(this.idDonation);
@@ -31,16 +59,20 @@ public class DonationDto implements Serializable {
         donation.setDescription(this.description);
         donation.setQuantiteDemandee(this.quantiteDemandee);
         donation.setQuantiteDonnee(this.quantiteDonnee);
-        donation.setAvailability(this.availability);
-        donation.setLastUpdated(this.lastUpdated);
+//        donation.setLastUpdated(this.lastUpdated);
         donation.setDonationType(this.donationType);
         donation.setQuantiteExcedentaire(this.quantiteExcedentaire);
+        donation.setImageUrl(this.imageUrl);
+        // startDate is set automatically by @PrePersist
+        donation.setEndDate(this.endDate);
+        donation.setCagnotteenligne(this.cagnotteenligne);
+        donation.setStatus(this.status);
+        donation.setPriority(this.priority); // ✅ set the priority
 
-        // Handle cagnotte and association in the service layer
         return donation;
     }
 
-    // 🔹 Convert Entity to DTO
+    // Entity -> DTO
     public static DonationDto fromDonation(Donation donation) {
         return new DonationDto(
                 donation.getIdDonation(),
@@ -48,12 +80,15 @@ public class DonationDto implements Serializable {
                 donation.getDescription(),
                 donation.getQuantiteDemandee(),
                 donation.getQuantiteDonnee(),
-                donation.getAvailability(),
-                donation.getLastUpdated(),
+//                donation.getLastUpdated(),
                 donation.getDonationType(),
                 donation.getQuantiteExcedentaire(),
-                donation.getCagnotteenligne() != null ? donation.getCagnotteenligne().getIdCagnotte() : null,
-                donation.getAssociationDonation() != null ? donation.getAssociationDonation().getIdAssociation() : null
+                donation.getImageUrl(),
+                donation.getStartDate(),
+                donation.getEndDate(),
+                donation.getCagnotteenligne(),
+                donation.getStatus(),
+                donation.getPriority() // ✅ include in DTO
         );
     }
 }
