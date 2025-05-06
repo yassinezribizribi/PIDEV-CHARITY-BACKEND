@@ -1,5 +1,7 @@
 package tn.esprit.examen.nomPrenomClasseExamen.services;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 import tn.esprit.examen.nomPrenomClasseExamen.dto.CrisisAssignmentResponse;
 import tn.esprit.examen.nomPrenomClasseExamen.dto.CrisisDTO;
@@ -20,7 +22,9 @@ public interface ICrisisServices {
     Crisis updateCrisis(Long id, Crisis crisis);
     void deleteCrisis(Long id);
     Optional<Crisis> getCrisisById(Long id);
-    List<Crisis> getAllCrises();
+
+    Page<Crisis> getAllCrises(Pageable pageable);
+
     List<Crisis> getCrisesBySubscriber(Long idUser);
     List<Crisis> getCrisesByStatus(CrisisStatus status);
     List<Crisis> getCrisesBySeverity(CrisisSeverity severity);
